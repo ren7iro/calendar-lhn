@@ -1,1 +1,1 @@
-# calendar-lhn
+# laghaim-boss-viewer

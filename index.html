@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laghaim Boss Spawn</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .header-row, .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-row {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .row {
+      border-bottom: 1px solid #ccc;
+      padding: 6px 0;
+    }
+    .col-name {
+      word-break: break-word;
+    }
+    .col-time {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .spawned {
+      color: green;
+      font-weight: bold;
+    }
+    @media (max-width: 600px) {
+      .header-row, .row {
+        grid-template-columns: 1fr auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-row">
+    <div class="col-name">Boss Name:</div>
+    <div class="col-time">Next:</div>
+  </div>
+  <div id="boss-list"></div>
+
+  <script>
+    async function fetchBossData() {
+      const res = await fetch('https://api.allorigins.win/raw?url=https://laghaimnew.com/MAIN_/cache/boss_spawn.json');
+      const data = await res.json();
+
+      const bosses = Object.values(data).sort((a, b) => new Date(a.bosstime) - new Date(b.bosstime));
+      const container = document.getElementById('boss-list');
+      container.innerHTML = '';
+
+      bosses.forEach(boss => {
+        const row = document.createElement('div');
+        row.className = 'row';
+
+        const name = document.createElement('div');
+        name.className = 'col-name';
+        name.textContent = boss.bossname || 'Unknown';
+
+        const time = document.createElement('div');
+        time.className = 'col-time';
+        const gmtTime = new Date(boss.bosstime);
+        gmtTime.setHours(gmtTime.getHours() + 10); // Convert GMT-3 to GMT+7
+        const now = new Date();
+
+        if (gmtTime <= now) {
+          time.textContent = 'spawn';
+          time.classList.add('spawned');
+        } else {
+          const timeStr = gmtTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          time.textContent = timeStr;
+        }
+
+        row.appendChild(name);
+        row.appendChild(time);
+        container.appendChild(row);
+      });
+    }
+
+    fetchBossData();
+    setInterval(fetchBossData, 10000);
+  </script>
+</body>
+</html>
