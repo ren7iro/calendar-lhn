@@ -12,7 +12,7 @@ body {
   border-radius: 10px;
   padding: 20px;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   box-shadow: 0 0 10px #333;
 }
 
@@ -25,21 +25,34 @@ h2 {
 .event-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
-  background: #222;
-  border: 1px solid #333;
-  border-radius: 8px;
+  align-items: center;
+  padding: 10px 14px;
   margin-bottom: 8px;
+  background: #222;
+  border-left: 4px solid #444;
+  border-radius: 6px;
 }
 
 .event-name {
   font-weight: bold;
+  font-size: 1rem;
 }
 
 .event-time {
   text-align: right;
-  font-size: 0.9em;
+  font-size: 0.9rem;
   color: #ccc;
+}
+
+.event-time small {
+  display: block;
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.ongoing {
+  color: #00ff99;
+  font-weight: bold;
 }
 
 .note {
