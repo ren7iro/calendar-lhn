@@ -12,7 +12,7 @@ const events = [
     time: "2025-07-01T15:00:00+07:00"
   },
   {
-    name: "💥 Revenge (Shilon,Lost Realm,Gwh)",
+    name: "💥 Revenge (Shilon, Lost Realm, Gwh)",
     time: "2025-07-01T22:00:00+07:00"
   },
   {
@@ -38,40 +38,27 @@ function renderEvents() {
   const container = document.getElementById("event-container");
   container.innerHTML = "";
 
-  let nextEvent = null;
-  let nextDiff = Infinity;
-
-  events.forEach((event) => {
+  events.forEach(event => {
     const eventTime = new Date(event.time);
     const diff = eventTime - now;
 
-    const countdown = diff > 0 ? formatCountdown(diff) : "⏱️ Passed";
+    let rightText = "";
+    if (diff > 0) {
+      rightText = formatCountdown(diff);
+    } else if (diff > -7200000) { // if event is within the last 2 hours
+      rightText = "<span class='ongoing'>ON GOING</span>";
+    } else {
+      rightText = "Done";
+    }
 
     const row = document.createElement("div");
     row.className = "event-row";
-
-    const name = document.createElement("div");
-    name.className = "event-name";
-    name.textContent = event.name;
-
-    const time = document.createElement("div");
-    time.className = "event-time";
-    time.innerHTML = `${formatTime(eventTime)}<br><small>${countdown}</small>`;
-
-    if (diff > 0 && diff < nextDiff) {
-      nextEvent = row;
-      nextDiff = diff;
-    }
-
-    row.appendChild(name);
-    row.appendChild(time);
+    row.innerHTML = `
+      <div class="event-name">${event.name}</div>
+      <div class="event-time">${formatTime(eventTime)}<br><small>${rightText}</small></div>
+    `;
     container.appendChild(row);
   });
-
-  if (nextEvent) {
-    nextEvent.style.background = "#2a2a55";
-    nextEvent.style.border = "1px solid #715bff";
-  }
 
   document.getElementById("local-time").textContent = new Date().toLocaleTimeString();
 }
