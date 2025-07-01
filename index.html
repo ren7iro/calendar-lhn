@@ -27,7 +27,6 @@
       justify-content: space-between;
       padding: 6px 12px;
       border-bottom: 1px solid #ddd;
-    margin-top: -1px;
     }
     .row.ongoing {
       color: green;
@@ -45,19 +44,21 @@
       width: 50%;
       text-align: right;
     }
+    .header-row {
+      font-weight: bold;
+      border-bottom: none;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="title" id="dayTitle"></div>
-    <div class="row" style="font-weight:bold; border-bottom: none;">
+    <div class="row header-row">
       <div class="label">Event:</div>
       <div class="time">Time:</div>
     </div>
-    </div>
-      <div class="time">Time:</div>
-    </div>
-    <div id="eventContainer" style="border-top: 1px solid #ddd;"></div>
+    <div id="eventContainer"></div>
   </div>
 
   <script>
