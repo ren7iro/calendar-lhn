@@ -59,11 +59,16 @@
     function parseGMTMinus3ToWIB(day, timeStr) {
       const [h, m] = timeStr.split(":" ).map(Number);
       const weekdayMap = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-      const dayOffset = (weekdayMap.indexOf(day) + 7 - new Date().getDay()) % 7;
-      const baseUTC = new Date();
-      baseUTC.setUTCDate(baseUTC.getUTCDate() + dayOffset);
-      baseUTC.setUTCHours(h + 3, m, 0, 0); // GMT-3 to UTC
-      return new Date(baseUTC.getTime() + (7 * 60 * 60 * 1000)); // UTC to WIB
+      const base = new Date();
+      const targetDay = weekdayMap.indexOf(day);
+      const currentUTC = new Date(base.getTime() + base.getTimezoneOffset() * 60000); // UTC now
+      const currentUTCDay = currentUTC.getUTCDay();
+      const dayOffset = (targetDay - currentUTCDay + 7) % 7;
+
+      const eventUTC = new Date(Date.UTC(currentUTC.getUTCFullYear(), currentUTC.getUTCMonth(), currentUTC.getUTCDate(), h, m));
+      eventUTC.setUTCDate(eventUTC.getUTCDate() + dayOffset);
+      eventUTC.setUTCHours(eventUTC.getUTCHours() + 3); // shift from GMT-3 to UTC
+      return new Date(eventUTC.getTime() + (7 * 60 * 60 * 1000)); // shift to WIB
     }
 
     async function fetchEvents() {
