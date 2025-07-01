@@ -27,6 +27,7 @@
       justify-content: space-between;
       padding: 6px 12px;
       border-bottom: 1px solid #ddd;
+    margin-top: -1px;
     }
     .row.ongoing {
       color: green;
@@ -49,11 +50,13 @@
 <body>
   <div class="wrap">
     <div class="title" id="dayTitle"></div>
-    <div class="row" style="font-weight:bold">
+    <div class="row" style="font-weight:bold; border-bottom: none;">
       <div class="label">Event:</div>
       <div class="time">Time:</div>
     </div>
-    <div id="eventContainer"></div>
+      <div class="time">Time:</div>
+    </div>
+    <div id="eventContainer" style="border-top: 1px solid #ddd;"></div>
   </div>
 
   <script>
