@@ -29,8 +29,12 @@
       border-bottom: 1px solid #ddd;
     }
     .row.ongoing {
-      color: green;
+      background-color: #eaffea;
       font-weight: bold;
+    }
+    .row.ended {
+      text-decoration: line-through;
+      color: #999;
     }
     .label {
       width: 50%;
@@ -62,7 +66,6 @@
       const today = new Date();
       const targetDay = weekdays.indexOf(dayStr);
 
-      // Create base date with correct day of week
       const base = new Date(today);
       const currentDay = base.getDay();
       let diff = targetDay - currentDay;
@@ -98,12 +101,17 @@
       }).sort((a, b) => a.startTime - b.startTime);
 
       events.forEach(({ name, startTime, endTime }) => {
+        const now = new Date();
+        const isOngoing = now >= startTime && now <= endTime;
+        const isEnded = now > endTime;
+
         let label = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
 
         let cssClass = "row";
-        if (now >= startTime && now <= endTime) {
-          label = "on going";
+        if (isOngoing) {
           cssClass += " ongoing";
+        } else if (isEnded) {
+          cssClass += " ended";
         }
 
         const row = document.createElement("div");
