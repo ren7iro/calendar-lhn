@@ -2,99 +2,115 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Custom Calendar Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Event Viewer</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    ul { list-style: none; padding: 0; }
-    li { margin-bottom: 10px; }
-    .evt { padding: 5px 0; border-bottom: 1px solid #ddd; }
-    .time { font-weight: bold; margin-right: 10px; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Tahoma, sans-serif;
+      background: #fff;
+      font-size: 16px;
+    }
+    .wrap {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 0 12px;
+    }
+    .title {
+      font-weight: bold;
+      padding: 12px;
+      font-size: 20px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-bottom: 1px solid #ddd;
+    }
+    .row.ongoing {
+      color: green;
+      font-weight: bold;
+    }
+    .label {
+      width: 50%;
+      text-align: left;
+      overflow-wrap: break-word;
+    }
+    .time {
+      width: 50%;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
-  <h2>📅 Events for Today (WIB)</h2>
-  <ul id="eventList"></ul>
+  <div class="wrap">
+    <div class="title" id="dayTitle"></div>
+    <div class="row" style="font-weight:bold">
+      <div class="label">Event</div>
+      <div class="time">Time</div>
+    </div>
+    <div id="eventContainer"></div>
+  </div>
 
   <script>
-    const SHEET_ID = '1lc1Lt2Of2VRQZIpuB-eVkaNT4ygKGrfX-4jBMZVWyYA';
-    const API_KEY = 'YOUR_GOOGLE_SHEETS_API_KEY';
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
 
-    // WIB offset in minutes
-    const WIB_OFFSET = 7 * 60;
-
-    async function fetchSheet() {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Sheet1!A2:D?key=${API_KEY}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      return data.values || [];
+    function parseTimeToWIB(timeStr) {
+      const [h, m] = timeStr.split(":" ).map(Number);
+      const utc = new Date(Date.UTC(2000, 0, 1, h, m));
+      return new Date(utc.getTime() + (7 * 60 * 60 * 1000)); // UTC+7 WIB
     }
 
-    function parseEvent([day, name, start, end]) {
+    function getTimeSortableKey(timeStr) {
+      const [h, m] = timeStr.split(":" ).map(Number);
+      return h * 60 + m;
+    }
+
+    async function fetchEvents() {
+      const res = await fetch(sheetURL);
+      const text = await res.text();
+      const rows = text.trim().split("\n").map(r => r.split(','));
+      rows.shift();
+
       const now = new Date();
-      const target = new Date(now);
-      const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-      const targetDayIndex = dayNames.indexOf(day);
-      const curDayIndex = now.getDay();
-      const dayDiff = (targetDayIndex + 7 - curDayIndex) % 7;
-      target.setDate(now.getDate() + dayDiff);
+      const nowWIB = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+      const todayName = nowWIB.toLocaleDateString('en-US', { weekday: 'long' });
+      document.getElementById("dayTitle").textContent = todayName;
 
-      const [sh, sm] = start.split(':').map(Number);
-      const [eh, em] = end.split(':').map(Number);
-      const dtStart = new Date(Date.UTC(
-        target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate(), sh, sm
-      ));
-      const dtEnd = new Date(Date.UTC(
-        target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate(), eh, em
-      ));
+      const container = document.getElementById("eventContainer");
+      container.innerHTML = "";
 
-      dtStart.setMinutes(dtStart.getMinutes() + WIB_OFFSET);
-      dtEnd.setMinutes(dtEnd.getMinutes() + WIB_OFFSET);
+      const todayEvents = rows.filter(([day]) => {
+        return day.trim().toLowerCase() === todayName.toLowerCase();
+      });
 
-      return { name, dtStart, dtEnd };
+      todayEvents.sort((a, b) => getTimeSortableKey(a[2]) - getTimeSortableKey(b[2]));
+
+      todayEvents.forEach(([_, name, start, end]) => {
+        const startTime = parseTimeToWIB(start);
+        const endTime = parseTimeToWIB(end);
+
+        let label = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+
+        let cssClass = "row";
+        if (nowWIB >= startTime && nowWIB <= endTime) {
+          label = "on going";
+          cssClass += " ongoing";
+        }
+
+        const row = document.createElement("div");
+        row.className = cssClass;
+        row.innerHTML = `
+          <div class="label">${name}</div>
+          <div class="time">${label}</div>
+        `;
+
+        container.appendChild(row);
+      });
     }
 
-    function isTodayWIB(dt) {
-      const now = new Date();
-      const localOffset = now.getTimezoneOffset();
-      const diff = localOffset + WIB_OFFSET;
-      const WIBnow = new Date(now.getTime() + diff * 60 * 1000);
-      return dt.getFullYear() === WIBnow.getFullYear() &&
-             dt.getMonth() === WIBnow.getMonth() &&
-             dt.getDate() === WIBnow.getDate();
-    }
-
-    function pad2(n) { return n.toString().padStart(2, '0'); }
-
-    function renderEvents(evts) {
-      const ul = document.getElementById('eventList');
-      ul.innerHTML = '';
-
-      evts
-        .filter(e => isTodayWIB(e.dtStart))
-        .sort((a, b) => a.dtStart - b.dtStart)
-        .forEach(ev => {
-          const li = document.createElement('li');
-          li.className = 'evt';
-          const ts = `${pad2(ev.dtStart.getHours())}:${pad2(ev.dtStart.getMinutes())}`;
-          const te = `${pad2(ev.dtEnd.getHours())}:${pad2(ev.dtEnd.getMinutes())}`;
-          li.innerHTML = `<span class="time">${ts}–${te}</span> ${ev.name}`;
-          ul.appendChild(li);
-        });
-    }
-
-    async function main() {
-      try {
-        const rows = await fetchSheet();
-        const evts = rows.map(parseEvent);
-        renderEvents(evts);
-      } catch (err) {
-        console.error(err);
-        document.getElementById('eventList')
-          .innerHTML = '<li>Error loading events.</li>';
-      }
-    }
-
-    main();
+    fetchEvents();
   </script>
 </body>
 </html>
