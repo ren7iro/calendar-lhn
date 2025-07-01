@@ -80,9 +80,10 @@
       const container = document.getElementById("eventContainer");
       container.innerHTML = "";
 
-      const todayEvents = rows.filter(([day, name, start, end]) => {
-        const localStart = parseTimeToLocal(start);
-        const localDayName = localStart.toLocaleDateString('en-US', { weekday: 'long' });
+      const todayEvents = rows.filter(([_, name, start, end]) => {
+  const localStart = parseTimeToLocal(start);
+  return localStart.toDateString() === now.toDateString();
+});
         return localDayName.toLowerCase() === todayName.toLowerCase();
       });
 
