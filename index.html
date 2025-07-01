@@ -15,7 +15,6 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      text-align: left;
     }
     th, td {
       padding: 10px;
@@ -24,6 +23,7 @@
     th {
       color: #444;
       font-size: 1rem;
+      text-align: left;
     }
     td {
       font-size: 0.95rem;
@@ -44,6 +44,9 @@
       font-style: italic;
       padding: 1rem;
       color: #999;
+    }
+    td.time-col {
+      text-align: right;
     }
     @media (max-width: 600px) {
       body {
@@ -72,6 +75,9 @@
         flex: 1;
         margin-right: 10px;
         color: #333;
+      }
+      td.time-col {
+        text-align: left;
       }
     }
   </style>
@@ -131,7 +137,6 @@
           .map(([day, name, start, end]) => ({ day, name, start, end }))
           .filter(event => event.day === today);
 
-        // Sort by server time start (converted to local)
         events.sort((a, b) => getLocalTimeFromServerTime(a.start) - getLocalTimeFromServerTime(b.start));
 
         const tbody = document.getElementById("event-table");
@@ -155,7 +160,7 @@
           tbody.innerHTML += `
             <tr>
               <td data-label="${today}">${event.name}</td>
-              <td data-label="Time">${timeDisplay} ${status}</td>
+              <td data-label="Time" class="time-col">${timeDisplay} ${status}</td>
             </tr>
           `;
         });
