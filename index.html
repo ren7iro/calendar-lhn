@@ -47,8 +47,8 @@
   <div class="wrap">
     <div class="title" id="dayTitle"></div>
     <div class="row" style="font-weight:bold">
-      <div class="label">Event</div>
-      <div class="time">Time</div>
+      <div class="label">Event:</div>
+      <div class="time">Time:</div>
     </div>
     <div id="eventContainer"></div>
   </div>
@@ -56,15 +56,15 @@
   <script>
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
 
-    function parseTimeToWIB(timeStr) {
+    function parseGMTMinus3ToWIB(timeStr, dayName) {
       const [h, m] = timeStr.split(":" ).map(Number);
-      const utc = new Date(Date.UTC(2000, 0, 1, h, m));
-      return new Date(utc.getTime() + (7 * 60 * 60 * 1000)); // UTC+7 WIB
-    }
-
-    function getTimeSortableKey(timeStr) {
-      const [h, m] = timeStr.split(":" ).map(Number);
-      return h * 60 + m;
+      const dayMap = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const today = new Date();
+      const dayIndex = dayMap.indexOf(dayName);
+      const target = new Date();
+      target.setUTCDate(today.getUTCDate() + ((dayIndex - today.getUTCDay() + 7) % 7));
+      target.setUTCHours(h + 3, m, 0, 0); // from GMT-3 to UTC
+      return new Date(target.getTime() + 7 * 60 * 60 * 1000); // to WIB
     }
 
     async function fetchEvents() {
@@ -81,16 +81,15 @@
       const container = document.getElementById("eventContainer");
       container.innerHTML = "";
 
-      const todayEvents = rows.filter(([day]) => {
-        return day.trim().toLowerCase() === todayName.toLowerCase();
-      });
+      const todayEvents = rows.map(([day, name, start, end]) => {
+        const startTime = parseGMTMinus3ToWIB(start, day);
+        const endTime = parseGMTMinus3ToWIB(end, day);
+        return { name, startTime, endTime };
+      }).filter(({ startTime }) => {
+        return startTime.toDateString() === nowWIB.toDateString();
+      }).sort((a, b) => a.startTime - b.startTime);
 
-      todayEvents.sort((a, b) => getTimeSortableKey(a[2]) - getTimeSortableKey(b[2]));
-
-      todayEvents.forEach(([_, name, start, end]) => {
-        const startTime = parseTimeToWIB(start);
-        const endTime = parseTimeToWIB(end);
-
+      todayEvents.forEach(({ name, startTime, endTime }) => {
         let label = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
 
         let cssClass = "row";
