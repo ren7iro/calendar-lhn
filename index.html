@@ -1,133 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Today's Events</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Event Viewer</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
     body {
-      font-family: "Arial", sans-serif;
-      background-color: #0f0f0f;
-      color: white;
+      font-family: sans-serif;
+      background: #fff;
+      color: #000;
+      margin: 0;
+      padding: 20px;
     }
-    .container {
-      max-width: 700px;
+    .event-container {
+      max-width: 600px;
       margin: auto;
-      padding: 16px;
     }
-    .title {
-      text-align: center;
-      padding: 24px 0;
-      font-size: 24px;
-      font-weight: bold;
-    }
-    .box {
+    .event {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      background-color: #1a1a1a;
+      background: #f9f9f9;
+      margin-bottom: 10px;
       padding: 12px 16px;
-      margin-bottom: 12px;
-      border-left: 4px solid #555;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      border-radius: 10px;
+      border: 1px solid #ddd;
     }
-    .name {
-      flex: 2;
+    .event.ongoing {
+      border: 1px solid #ff5252;
+      background: #ffecec;
+    }
+    .event-name {
+      font-size: 1rem;
+    }
+    .event-time {
+      font-size: 1rem;
       font-weight: bold;
-      font-size: 16px;
-      color: #ccc;
     }
-    .time {
-      flex: 1;
+    .center-text {
       text-align: center;
-      font-family: monospace;
-      color: #aaa;
-    }
-    .status {
-      flex: 1;
-      text-align: right;
-      font-size: 14px;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-weight: bold;
-    }
-    .status-on {
-      background-color: #00ff99;
-      color: #000;
-    }
-    .status-ended {
-      background-color: #555;
-      color: #999;
+      margin-top: 20px;
+      color: #555;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="title">Today's Events</div>
-    <div id="eventList"></div>
-  </div>
+  <div class="event-container" id="eventContainer"></div>
+  <div class="center-text">Auto-refreshes every 10 seconds</div>
 
   <script>
-    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDa9wCM0huRxhBO9KXMv0bbLRXX0MdAeK_EC3mc5sM8FZyrbgRRkN-PVwFO_uYh4RHEu5E-TyRSEUZ/pub?output=csv';
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrZ9QiZYRUpUVEqS6G7m4SLPW8wG1mTxFd9CkNU-ZkQyQEn5H81DNl2sfmptAyEklwFubM1bJe3DY6/pub?output=tsv';
 
-    function parseCSV(url) {
-      Papa.parse(url, {
-        download: true,
-        header: true,
-        complete: function(results) {
-          renderEvents(results.data);
-        }
-      });
-    }
-
-    function buildDate(timeStr) {
-      const today = new Date();
-      const [hour, minute] = timeStr.split(":");
-      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hour), parseInt(minute));
-      return date;
-    }
-
-    function renderEvents(events) {
+    function parseTime(timeStr) {
+      const [h, m] = timeStr.split(":").map(Number);
       const now = new Date();
-      const today = now.toLocaleDateString("en-US", { weekday: "long" });
-      const list = document.getElementById("eventList");
-      list.innerHTML = "";
+      now.setHours(h, m, 0, 0);
+      return now;
+    }
 
-      const todayEvents = events.filter(event => {
-        return event.day && event.day.trim().toLowerCase() === today.toLowerCase();
-      }).map(event => {
-        const start = buildDate(event.start_time);
-        const end = buildDate(event.end_time);
-        return {
-          name: event.event_name,
-          start,
-          end,
-          status: now >= start && now <= end ? "ON" : "ENDED"
-        };
-      });
+    async function fetchEvents() {
+      const res = await fetch(sheetURL);
+      const text = await res.text();
+      const rows = text.trim().split("\n").slice(1).map(r => r.split("\t"));
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
-      todayEvents.sort((a, b) => a.start - b.start);
+      const now = new Date();
+      const container = document.getElementById("eventContainer");
+      container.innerHTML = "";
 
-      todayEvents.forEach(event => {
-        const box = document.createElement('div');
-        box.className = 'box';
-        box.innerHTML = `
-          <div class="name">${event.name}</div>
-          <div class="time">${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-          <div class="status status-${event.status.toLowerCase()}">${event.status}</div>
+      const events = rows.filter(([day]) => day.trim() === today);
+
+      events.sort((a, b) => parseTime(a[2]) - parseTime(b[2]));
+
+      events.forEach(([_, name, start, end]) => {
+        const startTime = parseTime(start);
+        const endTime = parseTime(end);
+        const ongoing = now >= startTime && now <= endTime;
+
+        const div = document.createElement("div");
+        div.className = `event${ongoing ? " ongoing" : ""}`;
+
+        div.innerHTML = `
+          <div class="event-name">${name}</div>
+          <div class="event-time">${ongoing ? "ONGOING" : start}</div>
         `;
-        list.appendChild(box);
+
+        container.appendChild(div);
       });
     }
 
-    parseCSV(sheetUrl);
+    fetchEvents();
+    setInterval(fetchEvents, 10000);
   </script>
 </body>
 </html>
