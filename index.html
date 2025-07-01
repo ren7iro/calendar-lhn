@@ -45,9 +45,6 @@
       padding: 1rem;
       color: #999;
     }
-    td.time-col {
-      text-align: right;
-    }
     @media (max-width: 600px) {
       body {
         padding: 0.5rem;
@@ -76,9 +73,6 @@
         margin-right: 10px;
         color: #333;
       }
-      td.time-col {
-        text-align: left;
-      }
     }
   </style>
 </head>
@@ -87,6 +81,7 @@
     <thead>
       <tr>
         <th id="day-title">Today</th>
+        <th>Event</th>
         <th>Time</th>
       </tr>
     </thead>
@@ -100,7 +95,7 @@
     function getLocalTimeFromServerTime(timeStr) {
       const [h, m] = timeStr.split(":" ).map(Number);
       const date = new Date();
-      date.setUTCHours(h + 3, m, 0, 0); // Convert from GMT-3 to UTC
+      date.setUTCHours(h + 3 + 10, m, 0, 0); // Convert from GMT-3 to GMT+7 (+10)
       return date;
     }
 
@@ -143,7 +138,7 @@
         tbody.innerHTML = "";
 
         if (events.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="2" class="no-events">No events scheduled for today.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="3" class="no-events">No events scheduled for today.</td></tr>`;
           return;
         }
 
@@ -160,7 +155,8 @@
           tbody.innerHTML += `
             <tr>
               <td data-label="${today}">${event.name}</td>
-              <td data-label="Time" class="time-col">${timeDisplay} ${status}</td>
+              <td data-label="Time">${timeDisplay}</td>
+              <td data-label="Status">${status}</td>
             </tr>
           `;
         });
