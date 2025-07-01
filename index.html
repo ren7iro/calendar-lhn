@@ -5,112 +5,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Daily Event Schedule</title>
   <style>
-    body { font-family: sans-serif; padding: 1rem; background: #111; color: #fff; }
-    h1 { text-align: center; margin-bottom: 1rem; }
-    .event-card {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 1rem; margin: 0.5rem 0; background: #222; border-radius: 10px;
+    body {
+      font-family: sans-serif;
+      background: #fff;
+      color: #000;
+      padding: 2rem;
     }
-    .event-name { font-weight: bold; font-size: 1.1rem; }
-    .event-time { font-family: monospace; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+    th {
+      color: #444;
+      font-size: 1rem;
+    }
+    td {
+      font-size: 0.95rem;
+    }
     .status {
-      font-size: 0.9rem; padding: 0.2rem 0.5rem; border-radius: 5px;
-      background-color: #444; margin-left: 1rem;
+      font-weight: bold;
+      padding-left: 10px;
     }
-    .ongoing { background-color: #28a745; color: #fff; }
-    .upcoming { background-color: #ffc107; color: #000; }
+    .on {
+      color: green;
+    }
+    .end {
+      color: red;
+    }
   </style>
 </head>
 <body>
-  <h1>Today's Events</h1>
-  <div id="events"></div>
+  <table>
+    <thead>
+      <tr>
+        <th id="day-title">Today</th>
+        <th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="event-table"></tbody>
+  </table>
 
   <script>
-  const events = [
-    {
-      event: "Battle Laglamia",
-      schedule: [
-        { day: "Sunday", start: "10:00", end: "11:00" },
-        { day: "Monday", start: "03:00", end: "04:00" }
-      ]
-    },
-    {
-      event: "EXP x10",
-      schedule: [
-        { day: "Saturday", start: "00:00", end: "23:59" }
-      ],
-      note: "Weekend Boost"
-    },
-    {
-      event: "Gold Rain",
-      schedule: [
-        { day: "Tuesday", start: "12:00", end: "12:30" }
-      ]
-    },
-    {
-      event: "PvP War",
-      schedule: [
-        { day: "Friday", start: "20:00", end: "21:30" }
-      ],
-      note: "Channel 1 only"
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTbt9OXtqE7AGw3cZ5vvHHz8pOt-2lYk6Cu61UEbKkCTO6gk6aWGEQlEkME4FG1MnP8XhGPs1cYETk0/pub?output=csv';
+
+    const dayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    function getServerTime() {
+      const now = new Date();
+      const localOffset = now.getTimezoneOffset();
+      const serverOffset = -180; // GMT-3 in minutes
+      return new Date(now.getTime() + (serverOffset - localOffset) * 60000);
     }
-  ];
 
-  const dayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    function parseTimeToServerDate(timeStr) {
+      const [h, m] = timeStr.split(":").map(Number);
+      const now = getServerTime();
+      now.setHours(h, m, 0, 0);
+      return now;
+    }
 
-  // Convert browser time to server time (GMT-3)
-  function getServerTime() {
-    const now = new Date();
-    const localOffset = now.getTimezoneOffset(); // in minutes
-    const serverOffset = -180; // GMT−3 = −180 minutes
-    const diff = serverOffset - localOffset;
-    return new Date(now.getTime() + diff * 60000);
-  }
+    async function fetchAndRenderEvents() {
+      const res = await fetch(sheetURL);
+      const csv = await res.text();
+      const rows = csv.trim().split("\n").slice(1); // skip header
+      const today = dayMap[getServerTime().getDay()];
 
-  function parseTime(str) {
-    const [h, m] = str.split(":").map(Number);
-    const serverNow = getServerTime();
-    serverNow.setHours(h, m, 0, 0);
-    return serverNow;
-  }
+      document.getElementById("day-title").textContent = today;
 
-  function isOngoing(startStr, endStr) {
-    const now = getServerTime();
-    const start = parseTime(startStr);
-    const end = parseTime(endStr);
-    return now >= start && now <= end;
-  }
+      const events = rows
+        .map(row => {
+          const [day, name, start, end] = row.split(",");
+          return { day: day.trim(), name: name.trim(), start: start.trim(), end: end.trim() };
+        })
+        .filter(event => event.day === today);
 
-  function renderEvents() {
-    const container = document.getElementById("events");
-    container.innerHTML = "";
+      const now = getServerTime();
+      const tbody = document.getElementById("event-table");
+      tbody.innerHTML = "";
 
-    const serverNow = getServerTime();
-    const today = dayMap[serverNow.getDay()];
+      events.forEach(event => {
+        const start = parseTimeToServerDate(event.start);
+        const end = parseTimeToServerDate(event.end);
 
-    events.forEach(evt => {
-      evt.schedule.forEach(s => {
-        if (s.day === today) {
-          const ongoing = isOngoing(s.start, s.end);
-          const status = ongoing ? "ONGOING" : "UPCOMING";
-          const statusClass = ongoing ? "ongoing" : "upcoming";
+        let status = "";
+        if (now > end) status = "<span class='status end'>end</span>";
+        else if (now >= start && now <= end) status = "<span class='status on'>on</span>";
 
-          container.innerHTML += `
-            <div class="event-card">
-              <div class="event-name">${evt.event}</div>
-              <div class="event-time">
-                ${s.start} - ${s.end}
-                <span class="status ${statusClass}">${status}</span>
-              </div>
-            </div>
-          `;
-        }
+        tbody.innerHTML += `
+          <tr>
+            <td>${event.name}</td>
+            <td>${event.start} - ${event.end} ${status}</td>
+          </tr>
+        `;
       });
-    });
-  }
+    }
 
-  renderEvents();
-  setInterval(renderEvents, 10000); // Refresh every 10 sec
-</script>
+    fetchAndRenderEvents();
+    setInterval(fetchAndRenderEvents, 10000); // update every 10 sec
+  </script>
 </body>
 </html>
