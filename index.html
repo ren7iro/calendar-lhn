@@ -30,7 +30,7 @@
       word-wrap: break-word;
     }
     .status {
-      font-weight: normal;
+      font-weight: bold;
       padding-left: 10px;
     }
     .on {
@@ -81,8 +81,8 @@
     <thead>
       <tr>
         <th id="day-title">Today</th>
-        <th>Event</th>
         <th>Time</th>
+        <th>#</th>
       </tr>
     </thead>
     <tbody id="event-table"></tbody>
@@ -162,9 +162,9 @@
 
           tbody.innerHTML += `
             <tr>
-              <td data-label="Day">${today}</td>
               <td data-label="Event">${event.name}</td>
-              <td data-label="Time" style="text-align:right">${displayStart} - ${displayEnd} ${status}</td>
+              <td data-label="Time" style="text-align:right">${displayStart} - ${displayEnd}</td>
+              <td data-label="#">${status}</td>
             </tr>
           `;
         });
