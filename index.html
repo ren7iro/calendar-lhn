@@ -9,7 +9,8 @@
       font-family: sans-serif;
       background: #fff;
       color: #000;
-      padding: 2rem;
+      padding: 1rem;
+      margin: 0;
     }
     table {
       width: 100%;
@@ -26,9 +27,10 @@
     }
     td {
       font-size: 0.95rem;
+      word-wrap: break-word;
     }
     .status {
-      font-weight: bold;
+      font-weight: normal;
       padding-left: 10px;
     }
     .on {
@@ -42,6 +44,35 @@
       font-style: italic;
       padding: 1rem;
       color: #999;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 0.5rem;
+      }
+      table, thead, tbody, th, td, tr {
+        display: block;
+        width: 100%;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 0.5rem;
+      }
+      td {
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+      }
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        flex: 1;
+        margin-right: 10px;
+        color: #333;
+      }
     }
   </style>
 </head>
@@ -60,18 +91,11 @@
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
     const dayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    function getServerTime() {
-      const now = new Date();
-      const localOffset = now.getTimezoneOffset();
-      const serverOffset = -180;
-      return new Date(now.getTime() + (serverOffset - localOffset) * 60000);
-    }
-
-    function parseTimeToServerDate(timeStr) {
-      const [h, m] = timeStr.split(":").map(Number);
-      const now = getServerTime();
-      now.setHours(h, m, 0, 0);
-      return now;
+    function getLocalTimeFromServerTime(timeStr) {
+      const [h, m] = timeStr.split(":" ).map(Number);
+      const date = new Date();
+      date.setUTCHours(h + 3, m, 0, 0); // Convert from GMT-3 to UTC
+      return date;
     }
 
     function parseCSVLine(line) {
@@ -97,15 +121,19 @@
         const res = await fetch(sheetURL);
         const csv = await res.text();
         const rows = csv.trim().split("\n").slice(1);
-        const today = dayMap[getServerTime().getDay()];
+
+        const now = new Date();
+        const today = dayMap[now.getDay()];
         document.getElementById("day-title").textContent = today;
 
-        const events = rows
+        let events = rows
           .map(parseCSVLine)
           .map(([day, name, start, end]) => ({ day, name, start, end }))
           .filter(event => event.day === today);
 
-        const now = getServerTime();
+        // Sort by server time start (converted to local)
+        events.sort((a, b) => getLocalTimeFromServerTime(a.start) - getLocalTimeFromServerTime(b.start));
+
         const tbody = document.getElementById("event-table");
         tbody.innerHTML = "";
 
@@ -115,17 +143,19 @@
         }
 
         events.forEach(event => {
-          const start = parseTimeToServerDate(event.start);
-          const end = parseTimeToServerDate(event.end);
+          const start = getLocalTimeFromServerTime(event.start);
+          const end = getLocalTimeFromServerTime(event.end);
 
           let status = "";
           if (now > end) status = "<span class='status end'>end</span>";
           else if (now >= start && now <= end) status = "<span class='status on'>on</span>";
 
+          const timeDisplay = `${event.start} - ${event.end}`;
+
           tbody.innerHTML += `
             <tr>
-              <td>${event.name}</td>
-              <td>${event.start} - ${event.end} ${status}</td>
+              <td data-label="${today}">${event.name}</td>
+              <td data-label="Time">${timeDisplay} ${status}</td>
             </tr>
           `;
         });
