@@ -13,9 +13,9 @@
       font-size: 16px;
     }
     .wrap {
-      max-width: 1000px;
+      max-width: 100%;
       margin: 0 auto;
-      padding: 12px;
+      padding: 0 12px;
     }
     .title {
       font-weight: bold;
@@ -45,7 +45,7 @@
 </head>
 <body>
   <div class="wrap">
-    <div class="title" id="dayTitle">Today:</div>
+    <div class="title" id="dayTitle"></div>
     <div class="row" style="font-weight:bold">
       <div class="label">Event</div>
       <div class="time">Next:</div>
@@ -58,13 +58,12 @@
 
     function parseTimeToLocal(timeStr) {
       const [h, m] = timeStr.split(":").map(Number);
-      const d = new Date();
-      d.setUTCHours(h + 3, m, 0, 0); // Convert from GMT-3 to UTC, browser adjusts to local time zone
-      return d;
+      const utcDate = new Date(Date.UTC(2000, 0, 1, h + 3, m)); // adjust GMT-3 to UTC
+      return new Date(utcDate.getTime() + new Date().getTimezoneOffset() * -60000); // convert to local time
     }
 
     function getTimeSortableKey(timeStr) {
-      const [h, m] = timeStr.split(":").map(Number);
+      const [h, m] = timeStr.split(":".trim()).map(Number);
       return h * 60 + m;
     }
 
@@ -76,7 +75,7 @@
 
       const now = new Date();
       const today = now.toLocaleDateString('en-US', { weekday: 'long' });
-      document.getElementById("dayTitle").textContent = `Today: ${today}`;
+      document.getElementById("dayTitle").textContent = today;
 
       const container = document.getElementById("eventContainer");
       container.innerHTML = "";
