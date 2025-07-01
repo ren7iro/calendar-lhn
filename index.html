@@ -87,7 +87,7 @@
         const startTime = parseTimeToLocal(start);
         const endTime = parseTimeToLocal(end);
 
-        let label = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let label = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         let cssClass = "row";
 
         if (now >= startTime && now <= endTime) {
