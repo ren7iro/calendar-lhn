@@ -56,19 +56,16 @@
   <script>
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
 
-    function parseGMTMinus3ToWIB(day, timeStr) {
-      const [h, m] = timeStr.split(":" ).map(Number);
-      const weekdayMap = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-      const base = new Date();
-      const targetDay = weekdayMap.indexOf(day);
-      const currentUTC = new Date(base.getTime() + base.getTimezoneOffset() * 60000); // UTC now
-      const currentUTCDay = currentUTC.getUTCDay();
-      const dayOffset = (targetDay - currentUTCDay + 7) % 7;
+    function parseWIBTime(startStr, durationStr) {
+      const [sh, sm] = startStr.split(":").map(Number);
+      const start = new Date();
+      start.setHours(sh, sm, 0, 0);
 
-      const eventUTC = new Date(Date.UTC(currentUTC.getUTCFullYear(), currentUTC.getUTCMonth(), currentUTC.getUTCDate(), h, m));
-      eventUTC.setUTCDate(eventUTC.getUTCDate() + dayOffset);
-      eventUTC.setUTCHours(eventUTC.getUTCHours() + 3); // shift from GMT-3 to UTC
-      return new Date(eventUTC.getTime() + (7 * 60 * 60 * 1000)); // shift to WIB
+      const [amount, unit] = durationStr.split(" ");
+      const minutes = unit.includes("hour") ? parseInt(amount) * 60 : parseInt(amount);
+
+      const end = new Date(start.getTime() + minutes * 60000);
+      return { start, end };
     }
 
     async function fetchEvents() {
@@ -78,25 +75,24 @@
       rows.shift();
 
       const now = new Date();
-      const nowWIB = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-      const todayStr = nowWIB.toDateString();
-      document.getElementById("dayTitle").textContent = nowWIB.toLocaleDateString('en-US', { weekday: 'long' });
+      const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+      document.getElementById("dayTitle").textContent = dayName;
 
       const container = document.getElementById("eventContainer");
       container.innerHTML = "";
 
-      const eventsToday = rows.map(([day, name, start, end]) => {
-        const startWIB = parseGMTMinus3ToWIB(day, start);
-        const endWIB = parseGMTMinus3ToWIB(day, end);
-        return { name, startTime: startWIB, endTime: endWIB };
-      }).filter(e => e.startTime.toDateString() === todayStr)
-        .sort((a, b) => a.startTime - b.startTime);
+      const eventsToday = rows.filter(([day]) => {
+        return day.trim().toLowerCase() === dayName.toLowerCase();
+      }).map(([day, name, start, duration]) => {
+        const { start: startTime, end: endTime } = parseWIBTime(start, duration);
+        return { name, startTime, endTime };
+      }).sort((a, b) => a.startTime - b.startTime);
 
       eventsToday.forEach(({ name, startTime, endTime }) => {
         let label = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
 
         let cssClass = "row";
-        if (nowWIB >= startTime && nowWIB <= endTime) {
+        if (now >= startTime && now <= endTime) {
           label = "on going";
           cssClass += " ongoing";
         }
