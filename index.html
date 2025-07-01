@@ -87,43 +87,41 @@
       });
     }
 
-    function formatTime(dateStr) {
-      const date = new Date(dateStr);
-      if (isNaN(date)) return '-';
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function isSameDay(date1, date2) {
-      return date1.getFullYear() === date2.getFullYear() &&
-             date1.getMonth() === date2.getMonth() &&
-             date1.getDate() === date2.getDate();
+    function buildDate(timeStr) {
+      const today = new Date();
+      const [hour, minute] = timeStr.split(":");
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hour), parseInt(minute));
+      return date;
     }
 
     function renderEvents(events) {
       const now = new Date();
+      const today = now.toLocaleDateString("en-US", { weekday: "long" });
       const list = document.getElementById("eventList");
       list.innerHTML = "";
 
       const todayEvents = events.filter(event => {
-        const start = new Date(event.start);
-        const end = new Date(event.end);
-        if (isNaN(start) || isNaN(end)) return false;
-        return isSameDay(start, now) || isSameDay(end, now) || (now >= start && now <= end);
+        return event.day && event.day.trim().toLowerCase() === today.toLowerCase();
+      }).map(event => {
+        const start = buildDate(event.start_time);
+        const end = buildDate(event.end_time);
+        return {
+          name: event.event_name,
+          start,
+          end,
+          status: now >= start && now <= end ? "ON" : "ENDED"
+        };
       });
 
-      todayEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
+      todayEvents.sort((a, b) => a.start - b.start);
 
       todayEvents.forEach(event => {
-        const start = new Date(event.start);
-        const end = new Date(event.end);
-        const status = now >= start && now <= end ? 'ON' : 'ENDED';
-
         const box = document.createElement('div');
         box.className = 'box';
         box.innerHTML = `
           <div class="name">${event.name}</div>
-          <div class="time">${formatTime(event.start)}</div>
-          <div class="status status-${status.toLowerCase()}">${status}</div>
+          <div class="time">${event.start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          <div class="status status-${event.status.toLowerCase()}">${event.status}</div>
         `;
         list.appendChild(box);
       });
