@@ -92,11 +92,18 @@
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
     const dayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-    function getLocalTimeFromServerTime(timeStr) {
+    function convertTimeToLocal(timeStr) {
       const [h, m] = timeStr.split(":" ).map(Number);
       const date = new Date();
-      date.setUTCHours(h + 3 + 10, m, 0, 0); // Convert from GMT-3 to GMT+7 (+10)
+      date.setUTCHours(h + 3 + 10, m, 0, 0); // From GMT-3 to GMT+7
       return date;
+    }
+
+    function convertTimeStringToLocal(timeStr) {
+      const [h, m] = timeStr.split(":" ).map(Number);
+      const date = new Date();
+      date.setUTCHours(h + 3 + 10, m, 0, 0); // From GMT-3 to GMT+7
+      return date.toTimeString().slice(0, 5);
     }
 
     function parseCSVLine(line) {
@@ -132,7 +139,7 @@
           .map(([day, name, start, end]) => ({ day, name, start, end }))
           .filter(event => event.day === today);
 
-        events.sort((a, b) => getLocalTimeFromServerTime(a.start) - getLocalTimeFromServerTime(b.start));
+        events.sort((a, b) => convertTimeToLocal(a.start) - convertTimeToLocal(b.start));
 
         const tbody = document.getElementById("event-table");
         tbody.innerHTML = "";
@@ -143,20 +150,21 @@
         }
 
         events.forEach(event => {
-          const start = getLocalTimeFromServerTime(event.start);
-          const end = getLocalTimeFromServerTime(event.end);
+          const startDate = convertTimeToLocal(event.start);
+          const endDate = convertTimeToLocal(event.end);
 
           let status = "";
-          if (now > end) status = "<span class='status end'>end</span>";
-          else if (now >= start && now <= end) status = "<span class='status on'>on</span>";
+          if (now > endDate) status = "<span class='status end'>end</span>";
+          else if (now >= startDate && now <= endDate) status = "<span class='status on'>on</span>";
 
-          const timeDisplay = `${event.start} - ${event.end}`;
+          const displayStart = convertTimeStringToLocal(event.start);
+          const displayEnd = convertTimeStringToLocal(event.end);
 
           tbody.innerHTML += `
             <tr>
-              <td data-label="${today}">${event.name}</td>
-              <td data-label="Time">${timeDisplay}</td>
-              <td data-label="Status">${status}</td>
+              <td data-label="Day">${today}</td>
+              <td data-label="Event">${event.name}</td>
+              <td data-label="Time" style="text-align:right">${displayStart} - ${displayEnd} ${status}</td>
             </tr>
           `;
         });
