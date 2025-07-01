@@ -6,66 +6,73 @@
   <title>Today's Events</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
-    body {
+    * {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #0f0f0f;
-      color: #fff;
+      padding: 0;
+      box-sizing: border-box;
     }
-    header {
+    body {
+      font-family: "Arial", sans-serif;
+      background-color: #0f0f0f;
+      color: white;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 16px;
+    }
+    .title {
       text-align: center;
-      padding: 1rem 0;
-      background: #1a1a1a;
-      font-size: 1.5rem;
+      padding: 24px 0;
+      font-size: 24px;
       font-weight: bold;
-      letter-spacing: 0.05em;
     }
-    .event-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 1rem;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-    .event-box {
+    .box {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #191919;
-      border-left: 6px solid #333;
-      padding: 0.75rem 1rem;
-      border-radius: 6px;
+      background-color: #1a1a1a;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      border-left: 4px solid #555;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-    .event-name {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #ddd;
+    .name {
+      flex: 2;
+      font-weight: bold;
+      font-size: 16px;
+      color: #ccc;
     }
-    .event-time {
-      font-size: 0.95rem;
-      color: #aaa;
+    .time {
+      flex: 1;
+      text-align: center;
       font-family: monospace;
+      color: #aaa;
     }
     .status {
-      padding: 3px 10px;
+      flex: 1;
+      text-align: right;
+      font-size: 14px;
+      padding: 2px 8px;
       border-radius: 12px;
       font-weight: bold;
-      font-size: 0.85rem;
     }
     .status-on {
-      background: #00ff99;
+      background-color: #00ff99;
       color: #000;
     }
     .status-ended {
-      background: #444;
+      background-color: #555;
       color: #999;
     }
   </style>
 </head>
 <body>
-  <header>Today's Events</header>
-  <div id="eventList" class="event-container"></div>
+  <div class="container">
+    <div class="title">Today's Events</div>
+    <div id="eventList"></div>
+  </div>
 
   <script>
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDa9wCM0huRxhBO9KXMv0bbLRXX0MdAeK_EC3mc5sM8FZyrbgRRkN-PVwFO_uYh4RHEu5E-TyRSEUZ/pub?output=csv';
@@ -112,10 +119,10 @@
         const status = now >= start && now <= end ? 'ON' : 'ENDED';
 
         const box = document.createElement('div');
-        box.className = 'event-box';
+        box.className = 'box';
         box.innerHTML = `
-          <div class="event-name">${event.name}</div>
-          <div class="event-time">${formatTime(event.start)}</div>
+          <div class="name">${event.name}</div>
+          <div class="time">${formatTime(event.start)}</div>
           <div class="status status-${status.toLowerCase()}">${status}</div>
         `;
         list.appendChild(box);
