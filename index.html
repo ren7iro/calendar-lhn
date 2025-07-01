@@ -81,14 +81,14 @@
       const container = document.getElementById("eventContainer");
       container.innerHTML = "";
 
-      const eventsToday = rows.filter(([day]) => {
-        return day.trim().toLowerCase() === dayName.toLowerCase();
-      }).map(([day, name, start, duration]) => {
+      const events = rows.map(([day, name, start, duration]) => {
         const { start: startTime, end: endTime } = parseWIBTime(start, duration);
-        return { name, startTime, endTime };
+        return { day, name, startTime, endTime };
+      }).filter(({ startTime, endTime }) => {
+        return now >= startTime && now <= endTime || startTime.toDateString() === now.toDateString();
       }).sort((a, b) => a.startTime - b.startTime);
 
-      eventsToday.forEach(({ name, startTime, endTime }) => {
+      events.forEach(({ name, startTime, endTime }) => {
         let label = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
 
         let cssClass = "row";
