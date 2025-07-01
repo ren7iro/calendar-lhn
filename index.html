@@ -7,45 +7,65 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #111;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f0f0f;
       color: #fff;
-      padding: 2rem;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 2rem;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #333;
-      text-align: left;
-    }
-    th {
-      background-color: #222;
-    }
-    td.status-on {
-      color: limegreen;
+    header {
+      text-align: center;
+      padding: 1rem 0;
+      background: #1a1a1a;
+      font-size: 1.5rem;
       font-weight: bold;
+      letter-spacing: 0.05em;
     }
-    td.status-ended {
-      color: gray;
+    .event-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .event-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #191919;
+      border-left: 6px solid #333;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+    }
+    .event-name {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #ddd;
+    }
+    .event-time {
+      font-size: 0.95rem;
+      color: #aaa;
+      font-family: monospace;
+    }
+    .status {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+    .status-on {
+      background: #00ff99;
+      color: #000;
+    }
+    .status-ended {
+      background: #444;
+      color: #999;
     }
   </style>
 </head>
 <body>
-  <h1>Today's Events</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Event Name</th>
-        <th>Start Time</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="eventTable"></tbody>
-  </table>
+  <header>Today's Events</header>
+  <div id="eventList" class="event-container"></div>
 
   <script>
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDa9wCM0huRxhBO9KXMv0bbLRXX0MdAeK_EC3mc5sM8FZyrbgRRkN-PVwFO_uYh4RHEu5E-TyRSEUZ/pub?output=csv';
@@ -62,40 +82,43 @@
 
     function formatTime(dateStr) {
       const date = new Date(dateStr);
+      if (isNaN(date)) return '-';
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function isToday(dateStr) {
-      const date = new Date(dateStr);
-      const now = new Date();
-      return date.toDateString() === now.toDateString();
+    function isSameDay(date1, date2) {
+      return date1.getFullYear() === date2.getFullYear() &&
+             date1.getMonth() === date2.getMonth() &&
+             date1.getDate() === date2.getDate();
     }
 
     function renderEvents(events) {
       const now = new Date();
+      const list = document.getElementById("eventList");
+      list.innerHTML = "";
+
       const todayEvents = events.filter(event => {
         const start = new Date(event.start);
         const end = new Date(event.end);
-        return isToday(start) || (now >= start && now <= end);
+        if (isNaN(start) || isNaN(end)) return false;
+        return isSameDay(start, now) || isSameDay(end, now) || (now >= start && now <= end);
       });
 
       todayEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
-
-      const table = document.getElementById("eventTable");
-      table.innerHTML = "";
 
       todayEvents.forEach(event => {
         const start = new Date(event.start);
         const end = new Date(event.end);
         const status = now >= start && now <= end ? 'ON' : 'ENDED';
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${event.name}</td>
-          <td>${formatTime(event.start)}</td>
-          <td class="status-${status.toLowerCase()}">${status}</td>
+        const box = document.createElement('div');
+        box.className = 'event-box';
+        box.innerHTML = `
+          <div class="event-name">${event.name}</div>
+          <div class="event-time">${formatTime(event.start)}</div>
+          <div class="status status-${status.toLowerCase()}">${status}</div>
         `;
-        table.appendChild(tr);
+        list.appendChild(box);
       });
     }
 
