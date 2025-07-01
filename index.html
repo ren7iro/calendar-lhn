@@ -37,6 +37,12 @@
     .end {
       color: red;
     }
+    .no-events {
+      text-align: center;
+      font-style: italic;
+      padding: 1rem;
+      color: #999;
+    }
   </style>
 </head>
 <body>
@@ -52,13 +58,12 @@
 
   <script>
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTbt9OXtqE7AGw3cZ5vvHHz8pOt-2lYk6Cu61UEbKkCTO6gk6aWGEQlEkME4FG1MnP8XhGPs1cYETk0/pub?output=csv';
-
     const dayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     function getServerTime() {
       const now = new Date();
       const localOffset = now.getTimezoneOffset();
-      const serverOffset = -180; // GMT-3 in minutes
+      const serverOffset = -180;
       return new Date(now.getTime() + (serverOffset - localOffset) * 60000);
     }
 
@@ -69,44 +74,68 @@
       return now;
     }
 
+    function parseCSVLine(line) {
+      const parts = [];
+      let current = '';
+      let insideQuotes = false;
+      for (let char of line) {
+        if (char === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (char === ',' && !insideQuotes) {
+          parts.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      parts.push(current.trim());
+      return parts;
+    }
+
     async function fetchAndRenderEvents() {
-      const res = await fetch(sheetURL);
-      const csv = await res.text();
-      const rows = csv.trim().split("\n").slice(1); // skip header
-      const today = dayMap[getServerTime().getDay()];
+      try {
+        const res = await fetch(sheetURL);
+        const csv = await res.text();
+        const rows = csv.trim().split("\n").slice(1);
+        const today = dayMap[getServerTime().getDay()];
+        document.getElementById("day-title").textContent = today;
 
-      document.getElementById("day-title").textContent = today;
+        const events = rows
+          .map(parseCSVLine)
+          .map(([day, name, start, end]) => ({ day, name, start, end }))
+          .filter(event => event.day === today);
 
-      const events = rows
-        .map(row => {
-          const [day, name, start, end] = row.split(",");
-          return { day: day.trim(), name: name.trim(), start: start.trim(), end: end.trim() };
-        })
-        .filter(event => event.day === today);
+        const now = getServerTime();
+        const tbody = document.getElementById("event-table");
+        tbody.innerHTML = "";
 
-      const now = getServerTime();
-      const tbody = document.getElementById("event-table");
-      tbody.innerHTML = "";
+        if (events.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="2" class="no-events">No events scheduled for today.</td></tr>`;
+          return;
+        }
 
-      events.forEach(event => {
-        const start = parseTimeToServerDate(event.start);
-        const end = parseTimeToServerDate(event.end);
+        events.forEach(event => {
+          const start = parseTimeToServerDate(event.start);
+          const end = parseTimeToServerDate(event.end);
 
-        let status = "";
-        if (now > end) status = "<span class='status end'>end</span>";
-        else if (now >= start && now <= end) status = "<span class='status on'>on</span>";
+          let status = "";
+          if (now > end) status = "<span class='status end'>end</span>";
+          else if (now >= start && now <= end) status = "<span class='status on'>on</span>";
 
-        tbody.innerHTML += `
-          <tr>
-            <td>${event.name}</td>
-            <td>${event.start} - ${event.end} ${status}</td>
-          </tr>
-        `;
-      });
+          tbody.innerHTML += `
+            <tr>
+              <td>${event.name}</td>
+              <td>${event.start} - ${event.end} ${status}</td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        console.error("Failed to load or parse CSV:", err);
+      }
     }
 
     fetchAndRenderEvents();
-    setInterval(fetchAndRenderEvents, 10000); // update every 10 sec
+    setInterval(fetchAndRenderEvents, 10000);
   </script>
 </body>
 </html>
