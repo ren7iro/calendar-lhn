@@ -48,7 +48,7 @@
     <div class="title" id="dayTitle"></div>
     <div class="row" style="font-weight:bold">
       <div class="label">Event</div>
-      <div class="time">Next:</div>
+      <div class="time">Time:</div>
     </div>
     <div id="eventContainer"></div>
   </div>
@@ -58,12 +58,12 @@
 
     function parseTimeToLocal(timeStr) {
       const [h, m] = timeStr.split(":").map(Number);
-      const utcDate = new Date(Date.UTC(2000, 0, 1, h + 3, m)); // adjust GMT-3 to UTC
-      return new Date(utcDate.getTime() + new Date().getTimezoneOffset() * -60000); // convert to local time
+      const utc = new Date(Date.UTC(2000, 0, 1, h + 3, m)); // shift from GMT-3 to UTC
+      return new Date(utc.getTime() + new Date().getTimezoneOffset() * -60000);
     }
 
     function getTimeSortableKey(timeStr) {
-      const [h, m] = timeStr.split(":".trim()).map(Number);
+      const [h, m] = timeStr.split(":").map(Number);
       return h * 60 + m;
     }
 
@@ -74,22 +74,31 @@
       rows.shift();
 
       const now = new Date();
-      const today = now.toLocaleDateString('en-US', { weekday: 'long' });
-      document.getElementById("dayTitle").textContent = today;
+      const todayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+      document.getElementById("dayTitle").textContent = todayName;
 
       const container = document.getElementById("eventContainer");
       container.innerHTML = "";
 
-      const events = rows.filter(([day]) => day.trim().toLowerCase() === today.toLowerCase());
-      events.sort((a, b) => getTimeSortableKey(a[2]) - getTimeSortableKey(b[2]));
+      const todayEvents = rows.filter(([day, name, start, end]) => {
+        const localStart = parseTimeToLocal(start);
+        const localDayName = localStart.toLocaleDateString('en-US', { weekday: 'long' });
+        return localDayName.toLowerCase() === todayName.toLowerCase();
+      });
 
-      events.forEach(([_, name, start, end]) => {
+      todayEvents.sort((a, b) => getTimeSortableKey(a[2]) - getTimeSortableKey(b[2]));
+
+      todayEvents.forEach(([_, name, start, end]) => {
         const startTime = parseTimeToLocal(start);
         const endTime = parseTimeToLocal(end);
 
-        let label = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-        let cssClass = "row";
+        let label = startTime.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
 
+        let cssClass = "row";
         if (now >= startTime && now <= endTime) {
           label = "on";
           cssClass += " ongoing";
