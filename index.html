@@ -1,177 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Event Schedule</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Today's Events</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
     body {
       font-family: sans-serif;
-      background: #fff;
-      color: #000;
-      padding: 1rem;
-      margin: 0;
+      background-color: #111;
+      color: #fff;
+      padding: 2rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 2rem;
     }
     th, td {
-      padding: 10px;
-      border-bottom: 1px solid #ccc;
+      padding: 0.75rem;
+      border-bottom: 1px solid #333;
       text-align: left;
     }
     th {
-      color: #444;
-      font-size: 1rem;
+      background-color: #222;
     }
-    td {
-      font-size: 0.95rem;
-      vertical-align: middle;
-    }
-    .status {
+    td.status-on {
+      color: limegreen;
       font-weight: bold;
-      color: red;
     }
-    .on {
-      color: green;
-    }
-    .no-events {
-      text-align: center;
-      font-style: italic;
-      padding: 1rem;
-      color: #999;
-    }
-    @media (max-width: 600px) {
-      body {
-        padding: 0.5rem;
-      }
-      table, thead, tbody, th, td, tr {
-        display: block;
-        width: 100%;
-      }
-      thead {
-        display: none;
-      }
-      tr {
-        margin-bottom: 1rem;
-        border-bottom: 2px solid #ccc;
-        padding-bottom: 0.5rem;
-      }
-      td {
-        font-size: 1rem;
-        display: flex;
-        justify-content: space-between;
-      }
-      td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        flex: 1;
-        margin-right: 10px;
-        color: #333;
-      }
+    td.status-ended {
+      color: gray;
     }
   </style>
 </head>
 <body>
+  <h1>Today's Events</h1>
   <table>
     <thead>
       <tr>
-        <th id="day-title">Today</th>
-        <th>Time</th>
-        <th>#</th>
+        <th>Event Name</th>
+        <th>Start Time</th>
+        <th>Status</th>
       </tr>
     </thead>
-    <tbody id="event-table"></tbody>
+    <tbody id="eventTable"></tbody>
   </table>
 
   <script>
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
-    const dayMap = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTDa9wCM0huRxhBO9KXMv0bbLRXX0MdAeK_EC3mc5sM8FZyrbgRRkN-PVwFO_uYh4RHEu5E-TyRSEUZ/pub?output=csv';
 
-    function convertTimeToLocal(timeStr) {
-      const [h, m] = timeStr.split(":" ).map(Number);
-      const date = new Date();
-      date.setUTCHours(h + 3 + 10, m, 0, 0); // From GMT-3 to GMT+7
-      return date;
-    }
-
-    function convertTimeStringToLocal(timeStr) {
-      const [h, m] = timeStr.split(":" ).map(Number);
-      const date = new Date();
-      date.setUTCHours(h + 3 + 10, m, 0, 0); // From GMT-3 to GMT+7
-      return date.toTimeString().slice(0, 5);
-    }
-
-    function parseCSVLine(line) {
-      const parts = [];
-      let current = '';
-      let insideQuotes = false;
-      for (let char of line) {
-        if (char === '"') {
-          insideQuotes = !insideQuotes;
-        } else if (char === ',' && !insideQuotes) {
-          parts.push(current.trim());
-          current = '';
-        } else {
-          current += char;
+    function parseCSV(url) {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          renderEvents(results.data);
         }
-      }
-      parts.push(current.trim());
-      return parts;
+      });
     }
 
-    async function fetchAndRenderEvents() {
-      try {
-        const res = await fetch(sheetURL);
-        const csv = await res.text();
-        const rows = csv.trim().split("\n").slice(1);
-
-        const now = new Date();
-        const today = dayMap[now.getDay()];
-        document.getElementById("day-title").textContent = today;
-
-        let events = rows
-          .map(parseCSVLine)
-          .map(([day, name, start, end]) => ({ day, name, start, end }))
-          .filter(event => event.day === today);
-
-        events.sort((a, b) => convertTimeToLocal(a.start) - convertTimeToLocal(b.start));
-
-        const tbody = document.getElementById("event-table");
-        tbody.innerHTML = "";
-
-        if (events.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="3" class="no-events">No events scheduled for today.</td></tr>`;
-          return;
-        }
-
-        events.forEach(event => {
-          const startDate = convertTimeToLocal(event.start);
-          const endDate = convertTimeToLocal(event.end);
-
-          let status = "";
-          if (now > endDate) status = "<span class='status'>end</span>";
-          else if (now >= startDate && now <= endDate) status = "<span class='status on'>on</span>";
-
-          const displayStart = convertTimeStringToLocal(event.start);
-          const displayEnd = convertTimeStringToLocal(event.end);
-
-          tbody.innerHTML += `
-            <tr>
-              <td data-label="Event">${event.name}</td>
-              <td data-label="Time" style="text-align:right">${displayStart} - ${displayEnd}</td>
-              <td data-label="#">${status}</td>
-            </tr>
-          `;
-        });
-      } catch (err) {
-        console.error("Failed to load or parse CSV:", err);
-      }
+    function formatTime(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    fetchAndRenderEvents();
-    setInterval(fetchAndRenderEvents, 10000);
+    function isToday(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      return date.toDateString() === now.toDateString();
+    }
+
+    function renderEvents(events) {
+      const now = new Date();
+      const todayEvents = events.filter(event => {
+        const start = new Date(event.start);
+        const end = new Date(event.end);
+        return isToday(start) || (now >= start && now <= end);
+      });
+
+      todayEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+      const table = document.getElementById("eventTable");
+      table.innerHTML = "";
+
+      todayEvents.forEach(event => {
+        const start = new Date(event.start);
+        const end = new Date(event.end);
+        const status = now >= start && now <= end ? 'ON' : 'ENDED';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${event.name}</td>
+          <td>${formatTime(event.start)}</td>
+          <td class="status-${status.toLowerCase()}">${status}</td>
+        `;
+        table.appendChild(tr);
+      });
+    }
+
+    parseCSV(sheetUrl);
   </script>
 </body>
 </html>
