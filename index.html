@@ -19,25 +19,22 @@
     th, td {
       padding: 10px;
       border-bottom: 1px solid #ccc;
+      text-align: left;
     }
     th {
       color: #444;
       font-size: 1rem;
-      text-align: left;
     }
     td {
       font-size: 0.95rem;
-      word-wrap: break-word;
+      vertical-align: middle;
     }
     .status {
       font-weight: bold;
-      padding-left: 10px;
+      color: red;
     }
     .on {
       color: green;
-    }
-    .end {
-      color: red;
     }
     .no-events {
       text-align: center;
@@ -154,7 +151,7 @@
           const endDate = convertTimeToLocal(event.end);
 
           let status = "";
-          if (now > endDate) status = "<span class='status end'>end</span>";
+          if (now > endDate) status = "<span class='status'>end</span>";
           else if (now >= startDate && now <= endDate) status = "<span class='status on'>on</span>";
 
           const displayStart = convertTimeStringToLocal(event.start);
