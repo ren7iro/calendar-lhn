@@ -77,6 +77,12 @@
       return d;
     }
 
+    function getDayName(dateStr) {
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const d = new Date(dateStr);
+      return days[d.getDay()];
+    }
+
     function loadCSV(url) {
       return fetch(url)
         .then(res => res.text())
@@ -102,12 +108,22 @@
     function renderEvents(events) {
       const now = new Date();
       const baseDate = new Date(currentDate);
+      const targetDay = getDayName(currentDate); // e.g. "Monday"
       const list = document.getElementById("event-list");
       list.innerHTML = '';
 
-      events.sort((a, b) => a["start time"].localeCompare(b["start time"]));
+      const filtered = events.filter(e => {
+        return (e["day"] || '').toLowerCase() === targetDay.toLowerCase();
+      });
 
-      events.forEach(e => {
+      if (filtered.length === 0) {
+        list.innerHTML = 'No events for this day.';
+        return;
+      }
+
+      filtered.sort((a, b) => a["start time"].localeCompare(b["start time"]));
+
+      filtered.forEach(e => {
         const name = e["event name"];
         const startTime = parseTime(e["start time"], baseDate);
         const endTime = addDuration(startTime, e["duration"] || "15 min");
