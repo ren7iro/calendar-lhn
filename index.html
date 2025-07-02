@@ -161,24 +161,18 @@
             infoMsg.className = "info-msg info-ended";
           } else if (isOngoing) {
             const remaining = endTime - now;
+            const days = Math.floor(remaining / 86400000);
+            const hours = Math.floor((remaining % 86400000) / 3600000);
+            const minutes = Math.floor((remaining % 3600000) / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+
             let left = "";
-            if (remaining >= 86400000) {
-              const days = Math.floor(remaining / 86400000);
-              const hours = Math.floor((remaining % 86400000) / 3600000);
-              left = `${days}d ${hours}h`;
-            } else if (remaining >= 3600000) {
-              const hours = Math.floor(remaining / 3600000);
-              const minutes = Math.floor((remaining % 3600000) / 60000);
-              left = `${hours}h ${minutes}m`;
-            } else if (remaining >= 60000) {
-              const minutes = Math.floor(remaining / 60000);
-              const seconds = Math.floor((remaining % 60000) / 1000);
-              left = `${minutes}m ${seconds}s`;
-            } else {
-              const seconds = Math.floor(remaining / 1000);
-              left = `${seconds}s`;
-            }
-            infoMsg.textContent = `⏳ ${left} left`;
+            if (days > 0) left += `${days}d `;
+            if (days > 0 || hours > 0) left += `${hours}h `;
+            if (days > 0 || hours > 0 || minutes > 0) left += `${minutes}m `;
+            left += `${seconds}s`;
+
+            infoMsg.textContent = `⏳ ${left.trim()} left`;
             infoMsg.className = "info-msg info-ongoing";
           } else {
             const countdown = startTime - now;
