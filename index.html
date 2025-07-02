@@ -109,4 +109,159 @@
     }
     .header-row {
       font-weight: bold;
-      border-bottom:
+      border-bottom: none;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title" id="dayTitle"></div>
+    <div class="row header-row">
+      <div class="label">Event:</div>
+      <div class="time">
+        <div class="time-right">
+          <div class="wrapper">
+            <span class="time-content">Start - End</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="eventContainer"></div>
+  </div>
+
+  <script>
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
+
+    function parseWIBTime(dayStr, startStr, durationStr) {
+      const [sh, sm] = startStr.split(":").map(Number);
+      const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const today = new Date();
+      const targetDay = weekdays.indexOf(dayStr);
+
+      const base = new Date(today);
+      const currentDay = base.getDay();
+      let diff = targetDay - currentDay;
+      if (diff < 0) diff += 7;
+      base.setDate(base.getDate() + diff);
+      base.setHours(sh, sm, 0, 0);
+
+      const [amount, unit] = durationStr.split(" ");
+      const minutes = unit.includes("hour") ? parseInt(amount) * 60 : parseInt(amount);
+      const end = new Date(base.getTime() + minutes * 60000);
+
+      return { start: base, end };
+    }
+
+    function formatTime(date) {
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    function formatCountdown(ms) {
+      if (ms <= 0) return "00:00:00";
+      const sec = Math.floor(ms / 1000);
+      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    async function fetchEvents() {
+      const res = await fetch(sheetURL);
+      const text = await res.text();
+      const rows = text.trim().split("\n").map(r => r.split(','));
+      rows.shift();
+
+      const now = new Date();
+      const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+      document.getElementById("dayTitle").textContent = dayName;
+
+      const container = document.getElementById("eventContainer");
+      container.innerHTML = "";
+
+      const events = rows.map(([day, name, start, duration]) => {
+        const { start: startTime, end: endTime } = parseWIBTime(day, start, duration);
+        return { name, startTime, endTime };
+      }).filter(({ startTime }) => {
+        return startTime.toDateString() === now.toDateString();
+      }).sort((a, b) => a.startTime - b.startTime);
+
+      events.forEach(({ name, startTime, endTime }) => {
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const now = new Date();
+        const isOngoing = now >= startTime && now <= endTime;
+        const isEnded = now > endTime;
+
+        if (isOngoing) row.classList.add("ongoing");
+        if (isEnded) row.classList.add("ended");
+
+        const labelDiv = document.createElement("div");
+        labelDiv.className = "label";
+        labelDiv.textContent = name;
+
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "time";
+
+        const timeRight = document.createElement("div");
+        timeRight.className = "time-right";
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "wrapper";
+
+        const timeContent = document.createElement("span");
+        timeContent.className = "time-content";
+        timeContent.textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+
+        const infoMsg = document.createElement("span");
+        infoMsg.className = "info-msg";
+
+        const updateMsg = () => {
+          const now = new Date();
+          if (isEnded) {
+            infoMsg.textContent = `already ended`;
+          } else if (isOngoing) {
+            infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+          } else {
+            const countdown = formatCountdown(startTime - now);
+            infoMsg.textContent = `starts in ${countdown}`;
+          }
+        };
+        updateMsg();
+
+        let interval = null;
+        if (!isOngoing && !isEnded) {
+          interval = setInterval(() => {
+            updateMsg();
+            if (new Date() >= startTime) {
+              clearInterval(interval);
+              timeDiv.classList.remove("active");
+              infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+            }
+          }, 1000);
+        }
+
+        const infoBtn = document.createElement("button");
+        infoBtn.className = "info-btn";
+        infoBtn.textContent = "i";
+        infoBtn.onclick = () => {
+          timeDiv.classList.toggle("active");
+        };
+
+        wrapper.appendChild(timeContent);
+        wrapper.appendChild(infoMsg);
+        timeRight.appendChild(wrapper);
+        timeRight.appendChild(infoBtn);
+        timeDiv.appendChild(timeRight);
+
+        row.appendChild(labelDiv);
+        row.appendChild(timeDiv);
+        container.appendChild(row);
+      });
+    }
+
+    fetchEvents();
+  </script>
+</body>
+</html>
