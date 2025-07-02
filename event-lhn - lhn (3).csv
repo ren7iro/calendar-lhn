@@ -1,0 +1,52 @@
+day,event name,start time,duration
+Monday,Battle Flag,02:00,1 hour
+Monday,Battle Laglamia,08:00,25 min
+Monday,Exp x8,11:00,2 hour
+Monday,Battle Laglamia,13:00,25 min
+Monday,Exp x8,16:00,2 hour
+Monday,Revenge,18:00,1 hour
+Monday,Battle Flag,19:00,1 hour
+Monday,Exp x8,21:00,2 hour
+Tuesday,Battle Laglamia,01:00,25 min
+Tuesday,Exp x8,02:00,2 hour
+Tuesday,Revenge,06:00,1 hour
+Tuesday,Exp x8,07:00,2 hour
+Tuesday,Exp x8,11:00,2 hour
+Tuesday,Battle Laglamia,14:00,25 min
+Tuesday,Exp x8,16:00,2 hour
+Tuesday,Battle Stone,19:00,1 hour
+Tuesday,Exp x8,21:00,1 hour
+Wednesday,Exp x8,02:00,2 hour
+Wednesday,Battle Flag,05:00,1 hour
+Wednesday,Battle Laglamia,06:00,25 min
+Wednesday,Exp x8,07:00,2 hour
+Wednesday,Exp x10,13:00,3 hour
+Wednesday,Revenge,16:00,1 hour
+Wednesday,Battle Laglamia,19:00,25 min
+Wednesday,Battle Flag,20:00,1 hour
+Wednesday,Exp x10,21:00,3 hour
+Thursday,Exp x10,04:00,3 hour
+Thursday,Battle Laglamia,07:00,25 min
+Thursday,Revenge,09:00,1 hour
+Thursday,Exp x8,11:00,3 hour
+Thursday,Battle Laglamia,17:00,25 min
+Thursday,Exp x8,18:00,3 hour
+Friday,Exp x8,01:00,3 hour
+Friday,Battle Laglamia,05:00,25 min
+Friday,Battle Flag,06:00,1 hour
+Friday,Revenge,11:00,1 hour
+Friday,Exp x8,12:00,3 hour
+Friday,Battle Laglamia,15:00,25 min
+Friday,Battle Flag,17:00,1 hour
+Friday,Exp x8,20:00,3 hour
+Friday,Revenge,23:00,1 hour
+Saturday,Battle Laglamia,03:00,25 min
+Saturday,Exp x8,04:00,3 hour
+Saturday,Battle Stone,09:00,1 hour
+Saturday,Exp x10,10:00,48 hour
+Saturday,Shilon War,20:00,1 hour
+Saturday,Battle Laglamia,21:00,25 min
+Sunday,Battle Flag,02:00,1 hour
+Sunday,Battle Laglamia,09:00,25 min
+Sunday,Battle Laglamia,20:00,25 min
+Sunday,Gwh War,21:00,1 hour
