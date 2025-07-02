@@ -113,15 +113,6 @@
       return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
 
-    function formatCountdown(ms) {
-      if (ms <= 0) return "00:00:00";
-      const sec = Math.floor(ms / 1000);
-      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
-      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
-      const s = String(sec % 60).padStart(2, '0');
-      return `${h}:${m}:${s}`;
-    }
-
     async function fetchEvents() {
       const res = await fetch(sheetURL);
       const text = await res.text();
@@ -169,22 +160,42 @@
             infoMsg.textContent = `end (${formatTime(startTime)}–${formatTime(endTime)})`;
             infoMsg.className = "info-msg info-ended";
           } else if (isOngoing) {
-            infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+            const remaining = endTime - now;
+            let left = "";
+            if (remaining >= 86400000) {
+              const days = Math.floor(remaining / 86400000);
+              const hours = Math.floor((remaining % 86400000) / 3600000);
+              left = `${days}d ${hours}h`;
+            } else if (remaining >= 3600000) {
+              const hours = Math.floor(remaining / 3600000);
+              const minutes = Math.floor((remaining % 3600000) / 60000);
+              left = `${hours}h ${minutes}m`;
+            } else if (remaining >= 60000) {
+              const minutes = Math.floor(remaining / 60000);
+              const seconds = Math.floor((remaining % 60000) / 1000);
+              left = `${minutes}m ${seconds}s`;
+            } else {
+              const seconds = Math.floor(remaining / 1000);
+              left = `${seconds}s`;
+            }
+            infoMsg.textContent = `⏳ ${left} left`;
             infoMsg.className = "info-msg info-ongoing";
           } else {
-            const countdown = formatCountdown(startTime - now);
-            infoMsg.textContent = `starts in ${countdown}`;
+            const countdown = startTime - now;
+            const minutes = Math.floor(countdown / 60000);
+            const seconds = Math.floor((countdown % 60000) / 1000);
+            infoMsg.textContent = `starts in ${minutes}m ${seconds}s`;
             infoMsg.className = "info-msg info-upcoming";
           }
         };
         updateMsg();
 
-        if (!isOngoing && !isEnded) {
+        if (!isEnded) {
           const interval = setInterval(() => {
             updateMsg();
-            if (new Date() >= startTime) {
+            if (new Date() > endTime) {
               clearInterval(interval);
-              updateMsg();
+              updateMsg(); // flip to end
             }
           }, 1000);
         }
