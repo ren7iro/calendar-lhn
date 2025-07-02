@@ -5,96 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>calendar | lhn</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Tahoma, sans-serif;
-      background: #fff;
-      font-size: 16px;
-    }
-    .wrap {
-      max-width: 100%;
-      margin: 0 auto;
-      padding: 0 12px;
-    }
-    .title {
-      font-weight: bold;
-      padding: 12px;
-      font-size: 20px;
-    }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      padding: 6px 12px;
-      border-bottom: 1px solid #ddd;
-      align-items: center;
-    }
-    .row.ongoing {
-      color: green;
-    }
-    .row.ended {
-      text-decoration: line-through;
-      color: #999;
-    }
-    .label {
-      width: 50%;
-      text-align: left;
-      overflow-wrap: break-word;
-    }
-    .time {
-      width: 50%;
-      text-align: right;
-      position: relative;
-      height: 20px;
-    }
-    .time-content {
-      opacity: 1;
-      transition: opacity 0.4s ease;
-    }
-    .info-msg {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 100%;
-      text-align: right;
-      background: #fff;
-      color: #d00;
-      font-weight: normal;
-      white-space: nowrap;
-      padding-right: 30px;
-      transform: translateX(100%);
-      transition: transform 0.4s ease;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-    }
-    .time.active .time-content {
-      opacity: 0;
-    }
-    .time.active .info-msg {
-      transform: translateX(0%);
-    }
-    button.info-btn {
-      margin-left: 8px;
-      cursor: pointer;
-      background: #fff;
-      border: 2px solid red;
-      color: red;
-      font-weight: bold;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      text-align: center;
-      line-height: 18px;
-      font-size: 14px;
-    }
-    .header-row {
-      font-weight: bold;
-      border-bottom: none;
-      margin-bottom: 4px;
-    }
-  </style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Tahoma, sans-serif;
+    background: #fff;
+    font-size: 16px;
+  }
+  .wrap {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 12px;
+  }
+  .title {
+    font-weight: bold;
+    padding: 12px;
+    font-size: 20px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-bottom: 1px solid #ddd;
+    align-items: center;
+  }
+  .row.ongoing {
+    color: green;
+  }
+  .row.ended {
+    text-decoration: line-through;
+    color: #999;
+  }
+  .label {
+    width: 50%;
+    text-align: left;
+    overflow-wrap: break-word;
+  }
+  .time {
+    width: 50%;
+    text-align: right;
+    position: relative;
+    height: 20px;
+  }
+  .time-content {
+    opacity: 1;
+    transition: opacity 0.4s ease;
+  }
+  .info-msg {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    text-align: right;
+    background: #fff;
+    color: green;
+    font-weight: normal;
+    white-space: nowrap;
+    padding-right: 36px; /* room for button */
+    transform: translateX(100%);
+    transition: transform 0.4s ease;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    z-index: 1;
+  }
+  .time.active .time-content {
+    opacity: 0;
+  }
+  .time.active .info-msg {
+    transform: translateX(0%);
+  }
+  button.info-btn {
+    margin-left: 4px;
+    cursor: pointer;
+    background: #fff;
+    border: 2px solid green;
+    color: green;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 16px;
+    font-size: 12px;
+    position: relative;
+    z-index: 2; /* ensure it's above .info-msg */
+  }
+  .header-row {
+    font-weight: bold;
+    border-bottom: none;
+    margin-bottom: 4px;
+  }
+</style>
 </head>
 <body>
   <div class="wrap">
