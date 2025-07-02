@@ -55,6 +55,7 @@
       position: relative;
       overflow: hidden;
       display: inline-block;
+      min-width: 120px;
       max-width: 100%;
     }
     .time-content {
@@ -69,7 +70,6 @@
       height: 100%;
       width: 100%;
       background: #fff;
-      color: green;
       font-family: inherit;
       font-size: inherit;
       font-weight: inherit;
@@ -80,8 +80,19 @@
       align-items: center;
       justify-content: flex-end;
       padding-right: 8px;
+      padding-left: 8px;
       visibility: hidden;
       opacity: 0;
+      overflow: visible;
+    }
+    .info-ended {
+      color: #999;
+    }
+    .info-ongoing {
+      color: green;
+    }
+    .info-upcoming {
+      color: #000;
     }
     .time.active .time-content {
       opacity: 0;
@@ -131,7 +142,7 @@
   </div>
 
   <script>
-    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/1lc1Lt2Of2VRQZIpuB-eVkaNT4ygKGrfX-4jBMZVWyYA/export?format=csv';
 
     function parseWIBTime(dayStr, startStr, durationStr) {
       const [sh, sm] = startStr.split(":").map(Number);
@@ -218,14 +229,19 @@
         infoMsg.className = "info-msg";
 
         const updateMsg = () => {
+          infoMsg.className = "info-msg"; // reset classes
+
           const now = new Date();
           if (isEnded) {
             infoMsg.textContent = `already ended`;
+            infoMsg.classList.add("info-ended");
           } else if (isOngoing) {
             infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+            infoMsg.classList.add("info-ongoing");
           } else {
             const countdown = formatCountdown(startTime - now);
             infoMsg.textContent = `starts in ${countdown}`;
+            infoMsg.classList.add("info-upcoming");
           }
         };
         updateMsg();
@@ -238,6 +254,7 @@
               clearInterval(interval);
               timeDiv.classList.remove("active");
               infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+              infoMsg.className = "info-msg info-ongoing";
             }
           }, 1000);
         }
