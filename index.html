@@ -54,13 +54,11 @@
   <script>
     const csvUrl = 'https://ren7iro.github.io/calendar-lhn/data.csv';
 
-    // Get selected date from URL or default to today
     const urlParams = new URLSearchParams(window.location.search);
     const currentDate = urlParams.get("date") || new Date().toISOString().split("T")[0];
 
     const picker = document.getElementById("datePicker");
     picker.value = currentDate;
-
     picker.addEventListener("change", () => {
       const selected = picker.value;
       if (selected) {
@@ -73,6 +71,11 @@
       const d = new Date(date);
       d.setHours(h, m, 0, 0);
       return d;
+    }
+
+    function normalizeDate(dateStr) {
+      const d = new Date(dateStr);
+      return isNaN(d) ? '' : d.toISOString().split('T')[0];
     }
 
     function loadCSV(url) {
@@ -102,13 +105,12 @@
       const list = document.getElementById("event-list");
       list.innerHTML = '';
 
-      const filtered = events.filter(e => e.date === currentDate);
+      const filtered = events.filter(e => normalizeDate(e.date) === currentDate);
       if (filtered.length === 0) {
         list.innerHTML = '<p>No events for this day.</p>';
         return;
       }
 
-      // Sort by start time
       filtered.sort((a, b) => a.start.localeCompare(b.start));
 
       filtered.forEach(e => {
