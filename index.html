@@ -191,7 +191,7 @@
             if (days > 0 || hours > 0 || minutes > 0) countdown += `${minutes}m `;
             countdown += `${seconds}s`;
 
-            infoMsg.textContent = `🕒 ${formatTime(startTime)} (in ${countdown.trim()})`;
+            infoMsg.textContent = `🕒 ${formatTime(startTime)} (${countdown.trim()})`;
             infoMsg.className = "info-msg info-upcoming";
           }
         };
