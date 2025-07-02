@@ -157,7 +157,7 @@
         const updateMsg = () => {
           const now = new Date();
           if (isEnded) {
-            infoMsg.textContent = `end (${formatTime(startTime)}–${formatTime(endTime)})`;
+            infoMsg.textContent = `✔️ ${formatTime(startTime)}–${formatTime(endTime)}`;
             infoMsg.className = "info-msg info-ended";
           } else if (isOngoing) {
             const remaining = endTime - now;
@@ -175,10 +175,19 @@
             infoMsg.textContent = `⏳ ${left.trim()} left`;
             infoMsg.className = "info-msg info-ongoing";
           } else {
-            const countdown = startTime - now;
-            const minutes = Math.floor(countdown / 60000);
-            const seconds = Math.floor((countdown % 60000) / 1000);
-            infoMsg.textContent = `starts in ${minutes}m ${seconds}s`;
+            const total = startTime - now;
+            const days = Math.floor(total / 86400000);
+            const hours = Math.floor((total % 86400000) / 3600000);
+            const minutes = Math.floor((total % 3600000) / 60000);
+            const seconds = Math.floor((total % 60000) / 1000);
+
+            let countdown = "";
+            if (days > 0) countdown += `${days}d `;
+            if (days > 0 || hours > 0) countdown += `${hours}h `;
+            if (days > 0 || hours > 0 || minutes > 0) countdown += `${minutes}m `;
+            countdown += `${seconds}s`;
+
+            infoMsg.textContent = `🕒 ${formatTime(startTime)} (in ${countdown.trim()})`;
             infoMsg.className = "info-msg info-upcoming";
           }
         };
@@ -189,7 +198,7 @@
             updateMsg();
             if (new Date() > endTime) {
               clearInterval(interval);
-              updateMsg(); // flip to end
+              updateMsg();
             }
           }, 1000);
         }
