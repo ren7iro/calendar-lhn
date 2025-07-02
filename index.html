@@ -34,11 +34,10 @@
     }
 
     .row.ongoing {
-      color: green;
+      color: red;
     }
 
     .row.ended {
-      text-decoration: line-through;
       color: #999;
     }
 
@@ -68,11 +67,16 @@
     }
 
     .info-ongoing {
-      color: green;
+      color: red;
     }
 
     .info-upcoming {
       color: #000;
+    }
+
+    .ended-time {
+      text-decoration: line-through;
+      color: #999;
     }
   </style>
 </head>
@@ -157,7 +161,7 @@
         const updateMsg = () => {
           const now = new Date();
           if (isEnded) {
-            infoMsg.textContent = `✔️ ${formatTime(startTime)}–${formatTime(endTime)}`;
+            infoMsg.innerHTML = `✔️ <span class="ended-time">${formatTime(startTime)}–${formatTime(endTime)}</span>`;
             infoMsg.className = "info-msg info-ended";
           } else if (isOngoing) {
             const remaining = endTime - now;
@@ -198,7 +202,7 @@
             updateMsg();
             if (new Date() > endTime) {
               clearInterval(interval);
-              updateMsg();
+              updateMsg(); // re-render as ended
             }
           }, 1000);
         }
