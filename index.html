@@ -53,13 +53,14 @@
       display: flex;
       justify-content: flex-end;
       align-items: center;
+      text-align: right;
     }
 
     .info-msg {
-      background: #fff;
-      white-space: nowrap;
-      padding: 0 8px;
       color: #000;
+      min-width: 100%;
+      white-space: nowrap;
+      text-align: right;
     }
 
     .info-ended {
@@ -178,7 +179,6 @@
         };
         updateMsg();
 
-        // Auto-update if upcoming
         if (!isOngoing && !isEnded) {
           const interval = setInterval(() => {
             updateMsg();
