@@ -11,9 +11,6 @@
       background: #f9f9f9;
       color: #000;
     }
-    h1 {
-      margin-bottom: 0.5rem;
-    }
     .event {
       padding: 0.5rem 0;
       border-bottom: 1px solid #ccc;
@@ -22,19 +19,10 @@
       font-size: 0.9rem;
       margin-top: 0.25rem;
     }
-    .info-ended {
-      color: gray;
-    }
-    .info-ongoing {
-      color: red;
-    }
-    .info-upcoming {
-      color: black;
-    }
-    .icon {
-      font-weight: bold;
-      margin-right: 0.25rem;
-    }
+    .info-ended { color: gray; }
+    .info-ongoing { color: red; }
+    .info-upcoming { color: black; }
+    .icon { font-weight: bold; margin-right: 0.25rem; }
     #datePicker {
       padding: 0.25rem;
       font-size: 1rem;
@@ -43,12 +31,10 @@
 </head>
 <body>
   <h1>Calendar Viewer</h1>
-
   <div style="margin: 1rem 0;">
     <label for="datePicker">📅 Pick a date: </label>
     <input type="date" id="datePicker" />
   </div>
-
   <div id="event-list">Loading...</div>
 
   <script>
@@ -71,7 +57,23 @@
     function parseTime(str, date) {
       const [h, m] = str.split(':').map(Number);
       const d = new Date(date);
-      d.setHours(h, m, 0, 0);
+      d.setHours(h || 0, m || 0, 0, 0);
+      return d;
+    }
+
+    function addDuration(start, durationText) {
+      const d = new Date(start);
+      const match = durationText.match(/(\d+)\s*(hour|hr|minute|min)/gi);
+      if (!match) return d;
+
+      match.forEach(part => {
+        if (part.includes('hour')) {
+          d.setHours(d.getHours() + parseInt(part));
+        } else if (part.includes('min')) {
+          d.setMinutes(d.getMinutes() + parseInt(part));
+        }
+      });
+
       return d;
     }
 
@@ -80,11 +82,11 @@
         .then(res => res.text())
         .then(text => {
           const lines = text.trim().split('\n');
-          const headers = lines.shift().split(',');
+          const headers = lines.shift().split(',').map(h => h.trim().toLowerCase());
           return lines.map(line => {
-            const cols = line.split(',');
+            const cols = line.split(',').map(c => c.trim());
             const row = {};
-            headers.forEach((h, i) => row[h.trim()] = cols[i].trim());
+            headers.forEach((h, i) => row[h] = cols[i]);
             return row;
           });
         });
@@ -103,32 +105,34 @@
       const list = document.getElementById("event-list");
       list.innerHTML = '';
 
-      events.sort((a, b) => a.start.localeCompare(b.start));
+      events.sort((a, b) => a["start time"].localeCompare(b["start time"]));
 
       events.forEach(e => {
-        const startTime = parseTime(e.start, baseDate);
-        const endTime = parseTime(e.end, baseDate);
+        const name = e["event name"];
+        const startTime = parseTime(e["start time"], baseDate);
+        const endTime = addDuration(startTime, e["duration"] || "15 min");
+
         const isEnded = now > endTime;
         const isOngoing = now >= startTime && now <= endTime;
 
         let infoClass = 'info-upcoming';
         let icon = '🕒';
-        let msg = `${e.start} (in ${formatCountdown(startTime - now)})`;
+        let msg = `${e["start time"]} (in ${formatCountdown(startTime - now)})`;
 
         if (isEnded) {
           infoClass = 'info-ended';
           icon = '✔️';
-          msg = `${e.start} - Ended`;
+          msg = `${e["start time"]} - Ended`;
         } else if (isOngoing) {
           infoClass = 'info-ongoing';
           icon = '⏳';
-          msg = `${e.start} - Ongoing (ends in ${formatCountdown(endTime - now)})`;
+          msg = `${e["start time"]} - Ongoing (ends in ${formatCountdown(endTime - now)})`;
         }
 
         const div = document.createElement('div');
         div.className = 'event';
         div.innerHTML = `
-          <div><strong>${e.name}</strong></div>
+          <div><strong>${name}</strong></div>
           <div class="info-msg ${infoClass}">
             <span class="icon">${icon}</span>${msg}
           </div>
@@ -143,17 +147,12 @@
       const cachedDate = localStorage.getItem(STORAGE_DATE_KEY);
 
       if (cached && cachedDate === today) {
-        // Load from cache
         try {
-          const events = JSON.parse(cached);
-          renderEvents(events);
+          renderEvents(JSON.parse(cached));
           return;
-        } catch (err) {
-          console.error("Failed to parse cached data:", err);
-        }
+        } catch {}
       }
 
-      // Fetch fresh CSV
       loadCSV(csvUrl).then(events => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
         localStorage.setItem(STORAGE_DATE_KEY, today);
