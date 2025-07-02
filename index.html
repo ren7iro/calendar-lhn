@@ -45,25 +45,32 @@
       width: 50%;
       text-align: right;
       position: relative;
-      overflow: hidden;
+      height: 20px;
     }
     .time-content {
-      display: inline-block;
-      transition: transform 0.4s ease;
-      white-space: nowrap;
+      opacity: 1;
+      transition: opacity 0.4s ease;
     }
     .info-msg {
-      display: inline-block;
       position: absolute;
       top: 0;
       right: 0;
+      width: 100%;
+      text-align: right;
+      background: #fff;
+      color: #d00;
+      font-weight: normal;
       white-space: nowrap;
+      padding-right: 30px;
       transform: translateX(100%);
       transition: transform 0.4s ease;
-      color: #555;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
     }
     .time.active .time-content {
-      transform: translateX(-100%);
+      opacity: 0;
     }
     .time.active .info-msg {
       transform: translateX(0%);
@@ -71,9 +78,16 @@
     button.info-btn {
       margin-left: 8px;
       cursor: pointer;
-      background: none;
-      border: none;
-      font-size: 16px;
+      background: #fff;
+      border: 2px solid red;
+      color: red;
+      font-weight: bold;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      text-align: center;
+      line-height: 18px;
+      font-size: 14px;
     }
     .header-row {
       font-weight: bold;
@@ -92,11 +106,8 @@
     <div id="eventContainer"></div>
   </div>
 
-  <audio id="fx" src="https://cdn.pixabay.com/download/audio/2023/03/28/audio_05bb6571f8.mp3?filename=pop-up-110796.mp3" preload="auto"></audio>
-
   <script>
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
-    let activeTimeDiv = null;
 
     function parseWIBTime(dayStr, startStr, durationStr) {
       const [sh, sm] = startStr.split(":").map(Number);
@@ -122,13 +133,13 @@
       return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     }
 
-    function getCountdown(from, to) {
-      const diff = to - from;
-      if (diff <= 0) return "00:00";
-      const mins = Math.floor(diff / 60000);
-      const hrs = Math.floor(mins / 60);
-      const remMin = mins % 60;
-      return `${hrs.toString().padStart(2, '0')}:${remMin.toString().padStart(2, '0')}`;
+    function formatCountdown(ms) {
+      if (ms <= 0) return "00:00:00";
+      const sec = Math.floor(ms / 1000);
+      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
     }
 
     async function fetchEvents() {
@@ -148,16 +159,17 @@
         const { start: startTime, end: endTime } = parseWIBTime(day, start, duration);
         return { name, startTime, endTime };
       }).filter(({ startTime, endTime }) => {
-        return now >= startTime && now <= endTime || startTime.toDateString() === now.toDateString();
+        return startTime.toDateString() === now.toDateString();
       }).sort((a, b) => a.startTime - b.startTime);
 
       events.forEach(({ name, startTime, endTime }) => {
+        const row = document.createElement("div");
+        row.className = "row";
+
         const now = new Date();
         const isOngoing = now >= startTime && now <= endTime;
         const isEnded = now > endTime;
 
-        const row = document.createElement("div");
-        row.className = "row";
         if (isOngoing) row.classList.add("ongoing");
         if (isEnded) row.classList.add("ended");
 
@@ -174,33 +186,36 @@
 
         const infoMsg = document.createElement("span");
         infoMsg.className = "info-msg";
-        if (isEnded) {
-          infoMsg.textContent = `"${name}" already ended`;
-        } else if (isOngoing) {
-          infoMsg.textContent = `Ongoing until ${formatTime(endTime)}`;
-        } else {
-          infoMsg.textContent = `Starts in ${getCountdown(now, startTime)}`;
+        const updateMsg = () => {
+          const now = new Date();
+          if (isEnded) {
+            infoMsg.textContent = `"${name}" already ended`;
+          } else if (isOngoing) {
+            infoMsg.textContent = `Ongoing until ${formatTime(endTime)}`;
+          } else {
+            const countdown = formatCountdown(startTime - now);
+            infoMsg.textContent = `Starts in ${countdown}`;
+          }
+        };
+        updateMsg();
+        let interval = null;
+        if (!isOngoing && !isEnded) {
+          interval = setInterval(() => {
+            updateMsg();
+            if (new Date() >= startTime) {
+              clearInterval(interval);
+              timeDiv.classList.remove("active");
+              infoMsg.textContent = `Ongoing until ${formatTime(endTime)}`;
+            }
+          }, 1000);
         }
 
         const infoBtn = document.createElement("button");
         infoBtn.className = "info-btn";
-        infoBtn.textContent = "ℹ️";
+        infoBtn.textContent = "i";
 
         infoBtn.onclick = () => {
-          const fx = document.getElementById("fx");
-          if (activeTimeDiv && activeTimeDiv !== timeDiv) {
-            activeTimeDiv.classList.remove("active");
-          }
-          const isActive = timeDiv.classList.contains("active");
-          if (!isActive) {
-            timeDiv.classList.add("active");
-            activeTimeDiv = timeDiv;
-            fx.currentTime = 0;
-            fx.play();
-          } else {
-            timeDiv.classList.remove("active");
-            activeTimeDiv = null;
-          }
+          timeDiv.classList.toggle("active");
         };
 
         timeDiv.appendChild(timeContent);
