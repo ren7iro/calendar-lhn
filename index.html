@@ -53,6 +53,8 @@
 
   <script>
     const csvUrl = 'https://ren7iro.github.io/calendar-lhn/data.csv';
+    const STORAGE_KEY = 'calendarData';
+    const STORAGE_DATE_KEY = 'calendarDataDate';
 
     const urlParams = new URLSearchParams(window.location.search);
     const currentDate = urlParams.get("date") || new Date().toISOString().split("T")[0];
@@ -71,11 +73,6 @@
       const d = new Date(date);
       d.setHours(h, m, 0, 0);
       return d;
-    }
-
-    function normalizeDate(dateStr) {
-      const d = new Date(dateStr);
-      return isNaN(d) ? '' : d.toISOString().split('T')[0];
     }
 
     function loadCSV(url) {
@@ -102,20 +99,15 @@
 
     function renderEvents(events) {
       const now = new Date();
+      const baseDate = new Date(currentDate);
       const list = document.getElementById("event-list");
       list.innerHTML = '';
 
-      const filtered = events.filter(e => normalizeDate(e.date) === currentDate);
-      if (filtered.length === 0) {
-        list.innerHTML = '<p>No events for this day.</p>';
-        return;
-      }
+      events.sort((a, b) => a.start.localeCompare(b.start));
 
-      filtered.sort((a, b) => a.start.localeCompare(b.start));
-
-      filtered.forEach(e => {
-        const startTime = parseTime(e.start, e.date);
-        const endTime = parseTime(e.end, e.date);
+      events.forEach(e => {
+        const startTime = parseTime(e.start, baseDate);
+        const endTime = parseTime(e.end, baseDate);
         const isEnded = now > endTime;
         const isOngoing = now >= startTime && now <= endTime;
 
@@ -145,7 +137,31 @@
       });
     }
 
-    loadCSV(csvUrl).then(renderEvents);
+    function loadOrCacheCSV() {
+      const today = new Date().toISOString().split("T")[0];
+      const cached = localStorage.getItem(STORAGE_KEY);
+      const cachedDate = localStorage.getItem(STORAGE_DATE_KEY);
+
+      if (cached && cachedDate === today) {
+        // Load from cache
+        try {
+          const events = JSON.parse(cached);
+          renderEvents(events);
+          return;
+        } catch (err) {
+          console.error("Failed to parse cached data:", err);
+        }
+      }
+
+      // Fetch fresh CSV
+      loadCSV(csvUrl).then(events => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+        localStorage.setItem(STORAGE_DATE_KEY, today);
+        renderEvents(events);
+      });
+    }
+
+    loadOrCacheCSV();
   </script>
 </body>
 </html>
