@@ -27,6 +27,7 @@
       justify-content: space-between;
       padding: 6px 12px;
       border-bottom: 1px solid #ddd;
+      align-items: center;
     }
     .row.ongoing {
       color: green;
@@ -43,6 +44,36 @@
     .time {
       width: 50%;
       text-align: right;
+      position: relative;
+      overflow: hidden;
+    }
+    .time-content {
+      display: inline-block;
+      transition: transform 0.4s ease;
+      white-space: nowrap;
+    }
+    .info-msg {
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      white-space: nowrap;
+      transform: translateX(100%);
+      transition: transform 0.4s ease;
+      color: #555;
+    }
+    .time.active .time-content {
+      transform: translateX(-100%);
+    }
+    .time.active .info-msg {
+      transform: translateX(0%);
+    }
+    button.info-btn {
+      margin-left: 8px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
     }
     .header-row {
       font-weight: bold;
@@ -61,8 +92,11 @@
     <div id="eventContainer"></div>
   </div>
 
+  <audio id="fx" src="https://cdn.pixabay.com/download/audio/2023/03/28/audio_05bb6571f8.mp3?filename=pop-up-110796.mp3" preload="auto"></audio>
+
   <script>
     const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQn0_D-L5hifYWSFcix3jqCY36oESotsAZ03oUcWjspqPF1oX1-kIDS5LC-jDS78MO4QO8sOZPh-iyV/pub?output=csv';
+    let activeTimeDiv = null;
 
     function parseWIBTime(dayStr, startStr, durationStr) {
       const [sh, sm] = startStr.split(":").map(Number);
@@ -82,6 +116,19 @@
       const end = new Date(base.getTime() + minutes * 60000);
 
       return { start: base, end };
+    }
+
+    function formatTime(date) {
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    function getCountdown(from, to) {
+      const diff = to - from;
+      if (diff <= 0) return "00:00";
+      const mins = Math.floor(diff / 60000);
+      const hrs = Math.floor(mins / 60);
+      const remMin = mins % 60;
+      return `${hrs.toString().padStart(2, '0')}:${remMin.toString().padStart(2, '0')}`;
     }
 
     async function fetchEvents() {
@@ -109,22 +156,59 @@
         const isOngoing = now >= startTime && now <= endTime;
         const isEnded = now > endTime;
 
-        let label = `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')} - ${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+        const row = document.createElement("div");
+        row.className = "row";
+        if (isOngoing) row.classList.add("ongoing");
+        if (isEnded) row.classList.add("ended");
 
-        let cssClass = "row";
-        if (isOngoing) {
-          cssClass += " ongoing";
-        } else if (isEnded) {
-          cssClass += " ended";
+        const labelDiv = document.createElement("div");
+        labelDiv.className = "label";
+        labelDiv.textContent = name;
+
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "time";
+
+        const timeContent = document.createElement("span");
+        timeContent.className = "time-content";
+        timeContent.textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+
+        const infoMsg = document.createElement("span");
+        infoMsg.className = "info-msg";
+        if (isEnded) {
+          infoMsg.textContent = `"${name}" already ended`;
+        } else if (isOngoing) {
+          infoMsg.textContent = `Ongoing until ${formatTime(endTime)}`;
+        } else {
+          infoMsg.textContent = `Starts in ${getCountdown(now, startTime)}`;
         }
 
-        const row = document.createElement("div");
-        row.className = cssClass;
-        row.innerHTML = `
-          <div class="label">${name}</div>
-          <div class="time">${label}</div>
-        `;
+        const infoBtn = document.createElement("button");
+        infoBtn.className = "info-btn";
+        infoBtn.textContent = "ℹ️";
 
+        infoBtn.onclick = () => {
+          const fx = document.getElementById("fx");
+          if (activeTimeDiv && activeTimeDiv !== timeDiv) {
+            activeTimeDiv.classList.remove("active");
+          }
+          const isActive = timeDiv.classList.contains("active");
+          if (!isActive) {
+            timeDiv.classList.add("active");
+            activeTimeDiv = timeDiv;
+            fx.currentTime = 0;
+            fx.play();
+          } else {
+            timeDiv.classList.remove("active");
+            activeTimeDiv = null;
+          }
+        };
+
+        timeDiv.appendChild(timeContent);
+        timeDiv.appendChild(infoMsg);
+        timeDiv.appendChild(infoBtn);
+
+        row.appendChild(labelDiv);
+        row.appendChild(timeDiv);
         container.appendChild(row);
       });
     }
