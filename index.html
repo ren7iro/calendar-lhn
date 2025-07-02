@@ -43,32 +43,38 @@
   }
   .time {
     width: 50%;
-    text-align: right;
+    position: relative;
+  }
+  .time-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
     position: relative;
     height: 20px;
   }
   .time-content {
     opacity: 1;
     transition: opacity 0.4s ease;
+    white-space: nowrap;
   }
   .info-msg {
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 100%;
+    right: 30px;
+    max-width: calc(100% - 36px);
     text-align: right;
     background: #fff;
     color: green;
-    font-weight: normal;
     white-space: nowrap;
-    padding-right: 36px; /* room for button */
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
     transform: translateX(100%);
     transition: transform 0.4s ease;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    z-index: 1;
+    padding-left: 8px;
   }
   .time.active .time-content {
     opacity: 0;
@@ -89,8 +95,7 @@
     text-align: center;
     line-height: 16px;
     font-size: 12px;
-    position: relative;
-    z-index: 2; /* ensure it's above .info-msg */
+    z-index: 2;
   }
   .header-row {
     font-weight: bold;
@@ -166,70 +171,73 @@
       }).sort((a, b) => a.startTime - b.startTime);
 
       events.forEach(({ name, startTime, endTime }) => {
-        const row = document.createElement("div");
-        row.className = "row";
+  const row = document.createElement("div");
+  row.className = "row";
 
-        const now = new Date();
-        const isOngoing = now >= startTime && now <= endTime;
-        const isEnded = now > endTime;
+  const now = new Date();
+  const isOngoing = now >= startTime && now <= endTime;
+  const isEnded = now > endTime;
 
-        if (isOngoing) row.classList.add("ongoing");
-        if (isEnded) row.classList.add("ended");
+  if (isOngoing) row.classList.add("ongoing");
+  if (isEnded) row.classList.add("ended");
 
-        const labelDiv = document.createElement("div");
-        labelDiv.className = "label";
-        labelDiv.textContent = name;
+  const labelDiv = document.createElement("div");
+  labelDiv.className = "label";
+  labelDiv.textContent = name;
 
-        const timeDiv = document.createElement("div");
-        timeDiv.className = "time";
+  const timeDiv = document.createElement("div");
+  timeDiv.className = "time";
 
-        const timeContent = document.createElement("span");
-        timeContent.className = "time-content";
-        timeContent.textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+  const timeRight = document.createElement("div");
+  timeRight.className = "time-right";
 
-        const infoMsg = document.createElement("span");
-        infoMsg.className = "info-msg";
-        const updateMsg = () => {
-          const now = new Date();
-          if (isEnded) {
-            infoMsg.textContent = `"${name}" already ended`;
-          } else if (isOngoing) {
-            infoMsg.textContent = `Ongoing until ${formatTime(endTime)}`;
-          } else {
-            const countdown = formatCountdown(startTime - now);
-            infoMsg.textContent = `Starts in ${countdown}`;
-          }
-        };
-        updateMsg();
-        let interval = null;
-        if (!isOngoing && !isEnded) {
-          interval = setInterval(() => {
-            updateMsg();
-            if (new Date() >= startTime) {
-              clearInterval(interval);
-              timeDiv.classList.remove("active");
-              infoMsg.textContent = `Ongoing until ${formatTime(endTime)}`;
-            }
-          }, 1000);
-        }
+  const timeContent = document.createElement("span");
+  timeContent.className = "time-content";
+  timeContent.textContent = `${formatTime(startTime)} - ${formatTime(endTime)}`;
 
-        const infoBtn = document.createElement("button");
-        infoBtn.className = "info-btn";
-        infoBtn.textContent = "i";
-
-        infoBtn.onclick = () => {
-          timeDiv.classList.toggle("active");
-        };
-
-        timeDiv.appendChild(timeContent);
-        timeDiv.appendChild(infoMsg);
-        timeDiv.appendChild(infoBtn);
-
-        row.appendChild(labelDiv);
-        row.appendChild(timeDiv);
-        container.appendChild(row);
-      });
+  const infoMsg = document.createElement("span");
+  infoMsg.className = "info-msg";
+  const updateMsg = () => {
+    const now = new Date();
+    if (isEnded) {
+      infoMsg.textContent = `already ended`;
+    } else if (isOngoing) {
+      infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+    } else {
+      const countdown = formatCountdown(startTime - now);
+      infoMsg.textContent = `starts in ${countdown}`;
     }
+  };
+  updateMsg();
+
+  let interval = null;
+  if (!isOngoing && !isEnded) {
+    interval = setInterval(() => {
+      updateMsg();
+      if (new Date() >= startTime) {
+        clearInterval(interval);
+        timeDiv.classList.remove("active");
+        infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
+      }
+    }, 1000);
+  }
+
+  const infoBtn = document.createElement("button");
+  infoBtn.className = "info-btn";
+  infoBtn.textContent = "i";
+  infoBtn.onclick = () => {
+    timeDiv.classList.toggle("active");
+  };
+
+  timeRight.appendChild(timeContent);
+  timeRight.appendChild(infoMsg);
+  timeRight.appendChild(infoBtn);
+  timeDiv.appendChild(timeRight);
+
+  row.appendChild(labelDiv);
+  row.appendChild(timeDiv);
+  container.appendChild(row);
+});
 
     fetchEvents();
   </script>
