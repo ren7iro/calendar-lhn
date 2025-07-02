@@ -165,7 +165,7 @@
         const updateMsg = () => {
           const now = new Date();
           if (isEnded) {
-            infoMsg.textContent = `already ended (${formatTime(startTime)}–${formatTime(endTime)})`;
+            infoMsg.textContent = `end (${formatTime(startTime)}–${formatTime(endTime)})`;
             infoMsg.className = "info-msg info-ended";
           } else if (isOngoing) {
             infoMsg.textContent = `ongoing until ${formatTime(endTime)}`;
